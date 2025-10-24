@@ -2,35 +2,92 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>MovieHub - Too Many Options!</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MovieHub - Discover Movies</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <header>
-    <h1>MovieHub</h1>
-    <nav>
-      <button id="loginBtn">Login</button>
-      <button id="registerBtn">Register</button>
-      <input type="text" id="search" placeholder="Search movies...">
-      <select id="genreFilter">
-        <option>All Genres</option>
-        <option>Action</option>
-        <option>Comedy</option>
-        <!-- Add more -->
-      </select>
-    </nav>
-  </header>
-  <main>
-    <div id="movies"></div>
-    <div id="authModal" style="display:none;">
-      <form id="loginForm">
-        <input type="email" placeholder="Email">
-        <input type="password" placeholder="Password">
-        <button type="submit">Login</button>
-      </form>
-      <!-- Similar for register -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1 class="brand">MovieHub</h1>
+      <nav class="nav">
+        <a href="#" class="btn">Login</a>
+        <a href="#" class="btn btn-ghost">Register</a>
+      </nav>
     </div>
+    <div class="container search-row">
+      <input id="search" class="search" placeholder="Search movies..." />
+      <select id="genre" class="select">
+        <option value="">All Genres</option>
+        <option>Action</option>
+        <option>Drama</option>
+        <option>Comedy</option>
+        <option>Documentary</option>
+      </select>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h2>Find your next favorite movie</h2>
+      <p class="lead">Curated picks and easy search to discover films by genre and title.</p>
+    </section>
+
+    <section id="movies" class="grid">
+      <!-- Movie cards will be inserted here -->
+      <article class="card">
+        <div class="card-poster" style="background-image:url('https://via.placeholder.com/300x420')"></div>
+        <div class="card-body">
+          <h3 class="card-title">Sample Movie</h3>
+          <p class="card-meta">Action · 2024</p>
+        </div>
+      </article>
+    </section>
   </main>
-  <script src="script.js"></script>
+
+  <footer class="site-footer">
+    <div class="container">
+      <small>© <span id="year"></span> MovieHub — Built by you</small>
+    </div>
+  </footer>
+
+  <script>
+    // Simple client-side behavior: set year and basic filtering
+    document.getElementById('year').textContent = new Date().getFullYear();
+    const moviesEl = document.getElementById('movies');
+    const sampleData = [
+      {title:'Sample Movie', genre:'Action', year:2024, img:''}
+      // Add more JSON movie objects or load dynamically later
+    ];
+
+    // render sample cards
+    function render(list){
+      moviesEl.innerHTML = list.map(m => `
+        <article class="card">
+          <div class="card-poster" style="background-image:url('${m.img || 'https://via.placeholder.com/300x420'}')"></div>
+          <div class="card-body">
+            <h3 class="card-title">${m.title}</h3>
+            <p class="card-meta">${m.genre} · ${m.year}</p>
+          </div>
+        </article>
+      `).join('');
+    }
+    render(sampleData);
+
+    // basic search/filter
+    const search = document.getElementById('search');
+    const genre = document.getElementById('genre');
+    function filter(){
+      const q = search.value.toLowerCase();
+      const g = genre.value;
+      const filtered = sampleData.filter(m =>
+        m.title.toLowerCase().includes(q) && (g === '' || m.genre === g)
+      );
+      render(filtered);
+    }
+    search.addEventListener('input', filter);
+    genre.addEventListener('change', filter);
+  </script>
 </body>
 </html>
