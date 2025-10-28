@@ -2,60 +2,76 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import MovieCard from '../components/MovieCard';
 
-const API_KEY = 'your_tmdb_api_key'; // Replace with yours
-const OMDB_API_KEY = 'da8322ee'; // Adding OMDB API key as a constant
-const BASE_URL = 'https://api.themoviedb.org/3';
+const OMDB_API_KEY = 'da8322ee';
+const OMDB_BASE_URL = 'https://www.omdbapi.com';
 
 const Home = () => {
   const [movies, setMovies] = useState([]);
   const [search, setSearch] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchMovies();
-  }, [search]);
+    fetchMovies('batman');
+  }, []);
 
-  const fetchMovies = async () => {
-    let url = `${BASE_URL}/discover/movie?api_key=${API_KEY}`;
-    if (search) url = `${BASE_URL}/search/movie?api_key=${API_KEY}&query=${search}`;
-    const res = await axios.get(url);
-    setMovies(res.data.results);
+  const fetchMovies = async (q) => {
+    try {
+      setLoading(true);
+      setError('');
+      const term = q && q.trim().length > 0 ? q.trim() : 'batman';
+      const url = `${OMDB_BASE_URL}/?apikey=${OMDB_API_KEY}&s=${encodeURIComponent(term)}&type=movie&page=1`;
+      const res = await axios.get(url);
+      if (res.data && res.data.Response === 'True') {
+        setMovies(res.data.Search);
+      } else {
+        setMovies([]);
+        setError(res.data?.Error || 'No results found');
+      }
+    } catch (e) {
+      setError('Failed to fetch from OMDb.');
+      setMovies([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Example usage of the API key
-  console.log('OMDB API Key:', OMDB_API_KEY);
+  const handleSearch = (e) => {
+    e.preventDefault();
+    fetchMovies(search);
+  };
 
   return (
     <div className="pt-20">
-      {/* Hero Banner (Netflix-style) */}
-      {movies[0] && (
-        <div className="relative h-96 bg-cover bg-center" style={{ backgroundImage: `url(https://image.tmdb.org/t/p/original${movies[0].backdrop_path})` }}>
-          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-start p-8">
-            <div>
-              <h1 className="text-5xl font-bold mb-4">{movies[0].title}</h1>
-              <p className="text-lg mb-6 max-w-md">{movies[0].overview.slice(0, 200)}...</p>
-              <button className="bg-red-600 hover:bg-red-700 px-8 py-3 rounded-lg font-semibold transition">Watch Now</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Search Bar */}
       <div className="p-6">
-        <input
-          type="text"
-          placeholder="Search movies..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full p-3 bg-gray-800 rounded-lg text-white"
-        />
+        <form onSubmit={handleSearch} className="flex gap-3">
+          <input
+            type="text"
+            placeholder="Search movies..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 p-3 bg-gray-800 rounded-lg text-white"
+          />
+          <button type="submit" className="px-5 bg-red-600 hover:bg-red-700 rounded text-white font-semibold">
+            Search
+          </button>
+        </form>
+        {loading && <p className="text-gray-400 mt-3">Loading...</p>}
+        {error && <p className="text-red-400 mt-3">{error}</p>}
       </div>
 
-      {/* Movie Carousel/Grid */}
+      {/* Movie Grid */}
       <div className="p-6">
-        <h2 className="text-2xl font-bold mb-4">Popular Movies</h2>
+        <h2 className="text-2xl font-bold mb-4">Results</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-          {movies.slice(1).map((movie) => (
-            <MovieCard key={movie.id} movie={movie} />
+          {movies.map((movie) => (
+            <MovieCard key={movie.imdbID} movie={{
+              id: movie.imdbID,
+              title: movie.Title,
+              poster_path: movie.Poster !== 'N/A' ? movie.Poster : '',
+              year: movie.Year
+            }} />
           ))}
         </div>
       </div>
