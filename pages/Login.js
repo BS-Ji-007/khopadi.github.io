@@ -1,62 +1,50 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { hash, getUsers, setSession, generateOTP } from '../utils/auth';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [otp, setOtp] = useState('');
-  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [otpInput, setOtpInput] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
 
-  const handleLogin = async (e) => {
+  const requestOtp = async (e) => {
     e.preventDefault();
-    try {
-      if (!isOtpSent) {
-        // Request OTP
-        await axios.post('http://localhost:5000/request-otp', { email });
-        setIsOtpSent(true);
-        alert('OTP sent to your email!');
-      } else {
-        // Verify OTP and login
-        const res = await axios.post('http://localhost:5000/login', { email, password, otp });
-        localStorage.setItem('token', res.data.token);
-        alert('Logged in!');
-      }
-    } catch (err) {
-      alert('Login failed');
-    }
+    const users = getUsers();
+    const user = users.find(u => u.email === email);
+    if (!user) return alert('User not found');
+
+    const pwdHash = await hash(password);
+    if (pwdHash !== user.passwordHash) return alert('Invalid password');
+
+    const code = generateOTP();
+    setOtpCode(code);
+    setOtpSent(true);
+    alert(`Demo OTP (no email sent): ${code}`);
+  };
+
+  const verifyAndLogin = (e) => {
+    e.preventDefault();
+    if (otpInput !== otpCode) return alert('Invalid OTP');
+
+    setSession({ email, loginAt: new Date().toISOString() });
+    alert('Logged in (demo)');
+    window.location.href = '/';
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen">
-      <form onSubmit={handleLogin} className="bg-gray-800 p-8 rounded-lg shadow-xl w-96">
+      <form onSubmit={otpSent ? verifyAndLogin : requestOtp} className="bg-gray-800 p-8 rounded-lg shadow-xl w-96">
         <h2 className="text-3xl mb-6 text-center text-white">Login</h2>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-3 mb-4 bg-gray-700 rounded text-white"
-        />
-        {!isOtpSent && (
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-3 mb-6 bg-gray-700 rounded text-white"
-          />
+        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-3 mb-4 bg-gray-700 rounded text-white" />
+        {!otpSent && (
+          <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-3 mb-6 bg-gray-700 rounded text-white" />
         )}
-        {isOtpSent && (
-          <input
-            type="text"
-            placeholder="Enter OTP"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            className="w-full p-3 mb-6 bg-gray-700 rounded text-white"
-          />
+        {otpSent && (
+          <input type="text" placeholder="Enter OTP" value={otpInput} onChange={(e) => setOtpInput(e.target.value)} className="w-full p-3 mb-6 bg-gray-700 rounded text-white" />
         )}
         <button type="submit" className="w-full bg-red-600 hover:bg-red-700 p-3 rounded font-semibold text-white">
-          {isOtpSent ? 'Verify OTP' : 'Request OTP'}
+          {otpSent ? 'Verify OTP' : 'Request OTP'}
         </button>
       </form>
     </div>
