@@ -3,7 +3,7 @@ import axios from 'axios';
 import MovieCard from '../components/MovieCard';
 
 const API_KEY = 'your_tmdb_api_key'; // Replace with yours
-const OMDB_API_KEY = '7871265'; // Adding OMDB API key as a constant
+const OMDB_API_KEY = 'da8322ee'; // Adding OMDB API key as a constant
 const BASE_URL = 'https://api.themoviedb.org/3';
 
 const Home = () => {
