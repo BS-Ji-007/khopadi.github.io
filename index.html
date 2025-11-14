@@ -1,93 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MovieHub - Discover Movies</title>
-  <link rel="stylesheet" href="assets/css/styles.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-</head>
-<body>
-  <header class="site-header">
-    <div class="container header-inner">
-      <h1 class="brand">MovieHub</h1>
-      <nav class="nav">
-        <a href="#" class="btn">Login</a>
-        <a href="#" class="btn btn-ghost">Register</a>
-      </nav>
-    </div>
-    <div class="container search-row">
-      <input id="search" class="search" placeholder="Search movies..." />
-      <select id="genre" class="select">
-        <option value="">All Genres</option>
-        <option>Action</option>
-        <option>Drama</option>
-        <option>Comedy</option>
-        <option>Documentary</option>
-      </select>
-    </div>
-  </header>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="Web site created using create-react-app"
+    />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <!--
+      manifest.json provides metadata used when your web app is installed on a
+      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <!--
+      Notice the use of %PUBLIC_URL% in the tags above.
+      It will be replaced with the URL of the `public` folder during the build.
+      Only files inside the `public` folder can be referenced from the HTML.
 
-  <main class="container">
-    <section class="hero">
-      <h2>Find your next favorite movie</h2>
-      <p class="lead">Curated picks and easy search to discover films by genre and title.</p>
-    </section>
+      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
+      work correctly both with client-side routing and a non-root public URL.
+      Learn how to configure a non-root public URL by running `npm run build`.
+    -->
+    <title>React App</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <!--
+      This HTML file is a template.
+      If you open it directly in the browser, you will see an empty page.
 
-    <section id="movies" class="grid">
-      <!-- Movie cards will be inserted here -->
-      <article class="card">
-        <div class="card-poster" style="background-image:url('https://via.placeholder.com/300x420')"></div>
-        <div class="card-body">
-          <h3 class="card-title">Sample Movie</h3>
-          <p class="card-meta">Action · 2024</p>
-        </div>
-      </article>
-    </section>
-  </main>
+      You can add webfonts, meta tags, or analytics to this file.
+      The build step will place the bundled scripts into the <body> tag.
 
-  <footer class="site-footer">
-    <div class="container">
-      <small>© <span id="year"></span> MovieHub — Built by you</small>
-    </div>
-  </footer>
-
-  <script>
-    // Simple client-side behavior: set year and basic filtering
-    document.getElementById('year').textContent = new Date().getFullYear();
-    const moviesEl = document.getElementById('movies');
-    const sampleData = [
-      {title:'Sample Movie', genre:'Action', year:2024, img:''}
-      // Add more JSON movie objects or load dynamically later
-    ];
-
-    // render sample cards
-    function render(list){
-      moviesEl.innerHTML = list.map(m => `
-        <article class="card">
-          <div class="card-poster" style="background-image:url('${m.img || 'https://via.placeholder.com/300x420'}')"></div>
-          <div class="card-body">
-            <h3 class="card-title">${m.title}</h3>
-            <p class="card-meta">${m.genre} · ${m.year}</p>
-          </div>
-        </article>
-      `).join('');
-    }
-    render(sampleData);
-
-    // basic search/filter
-    const search = document.getElementById('search');
-    const genre = document.getElementById('genre');
-    function filter(){
-      const q = search.value.toLowerCase();
-      const g = genre.value;
-      const filtered = sampleData.filter(m =>
-        m.title.toLowerCase().includes(q) && (g === '' || m.genre === g)
-      );
-      render(filtered);
-    }
-    search.addEventListener('input', filter);
-    genre.addEventListener('change', filter);
-  </script>
-</body>
+      To begin the development, run `npm start` or `yarn start`.
+      To create a production bundle, use `npm run build` or `yarn build`.
+    -->
+  </body>
 </html>
