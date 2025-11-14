@@ -5,6 +5,9 @@ const nodemailer = require('nodemailer');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
+const sequelize = require('./config/database');
+const User = require('./models/User');
+const Otp = require('./models/Otp');
 
 const app = express();
 app.use(express.json());
@@ -16,10 +19,6 @@ const limiter = rateLimit({
   max: 100 // limit each IP to 100 requests per windowMs
 });
 app.use(limiter);
-
-// In-memory storage (replace with database in production)
-const users = [];
-const otpStore = {};
 
 // Email transporter
 const transporter = nodemailer.createTransporter({
@@ -43,7 +42,7 @@ const sendOTPEmail = async (email, otp) => {
     subject: 'Your OTP for Khopadi Movies',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #dc2626;">Khopadi Movies - OTP Verification</h2>
+        <h2 style="color: #cf2525ff;">Khopadi Movies - OTP Verification</h2>
         <p>Your OTP for login/registration is:</p>
         <div style="background-color: #f3f4f6; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; color: #dc2626; border-radius: 8px; margin: 20px 0;">
           ${otp}
@@ -67,7 +66,7 @@ app.post('/register', async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = users.find(user => user.email === email);
+    const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -76,12 +75,13 @@ app.post('/register', async (req, res) => {
     const otp = generateOTP();
     const otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
     
-    otpStore[email] = {
+    await Otp.create({
+      email,
       otp,
-      expiry: otpExpiry,
-      userData: { email, password, name },
-      type: 'register'
-    };
+      expiry: new Date(otpExpiry),
+      type: 'register',
+      userData: { email, password, name }
+    });
 
     await sendOTPEmail(email, otp);
     res.json({ message: 'OTP sent to your email for registration' });
@@ -96,32 +96,25 @@ app.post('/verify-register', async (req, res) => {
   try {
     const { email, otp } = req.body;
 
-    const otpData = otpStore[email];
-    if (!otpData || otpData.type !== 'register') {
+    const otpData = await Otp.findOne({ where: { email, otp, type: 'register' } });
+    if (!otpData) {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
     if (Date.now() > otpData.expiry) {
-      delete otpStore[email];
+      await otpData.destroy();
       return res.status(400).json({ message: 'OTP expired' });
-    }
-
-    if (otpData.otp !== otp) {
-      return res.status(400).json({ message: 'Invalid OTP' });
     }
 
     // Create user
     const hashedPassword = await bcrypt.hash(otpData.userData.password, 10);
-    const newUser = {
-      id: users.length + 1,
+    const newUser = await User.create({
       email: otpData.userData.email,
       password: hashedPassword,
       name: otpData.userData.name,
-      createdAt: new Date()
-    };
+    });
 
-    users.push(newUser);
-    delete otpStore[email];
+    await otpData.destroy();
 
     const token = jwt.sign(
       { userId: newUser.id, email: newUser.email },
@@ -145,7 +138,7 @@ app.post('/request-otp', async (req, res) => {
   try {
     const { email } = req.body;
 
-    const user = users.find(u => u.email === email);
+    const user = await User.findOne({ where: { email } });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -153,11 +146,12 @@ app.post('/request-otp', async (req, res) => {
     const otp = generateOTP();
     const otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
     
-    otpStore[email] = {
+    await Otp.create({
+      email,
       otp,
-      expiry: otpExpiry,
+      expiry: new Date(otpExpiry),
       type: 'login'
-    };
+    });
 
     await sendOTPEmail(email, otp);
     res.json({ message: 'OTP sent to your email' });
@@ -172,7 +166,7 @@ app.post('/login', async (req, res) => {
   try {
     const { email, password, otp } = req.body;
 
-    const user = users.find(u => u.email === email);
+    const user = await User.findOne({ where: { email } });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -184,21 +178,17 @@ app.post('/login', async (req, res) => {
     }
 
     // Verify OTP
-    const otpData = otpStore[email];
-    if (!otpData || otpData.type !== 'login') {
+    const otpData = await Otp.findOne({ where: { email, otp, type: 'login' } });
+    if (!otpData) {
       return res.status(400).json({ message: 'Please request OTP first' });
     }
 
     if (Date.now() > otpData.expiry) {
-      delete otpStore[email];
+      await otpData.destroy();
       return res.status(400).json({ message: 'OTP expired' });
     }
 
-    if (otpData.otp !== otp) {
-      return res.status(400).json({ message: 'Invalid OTP' });
-    }
-
-    delete otpStore[email];
+    await otpData.destroy();
 
     const token = jwt.sign(
       { userId: user.id, email: user.email },
@@ -236,8 +226,8 @@ const authenticateToken = (req, res, next) => {
 };
 
 // Protected profile route
-app.get('/profile', authenticateToken, (req, res) => {
-  const user = users.find(u => u.id === req.user.userId);
+app.get('/profile', authenticateToken, async (req, res) => {
+  const user = await User.findByPk(req.user.userId);
   if (!user) {
     return res.status(404).json({ message: 'User not found' });
   }
@@ -256,7 +246,10 @@ app.get('/health', (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
+
+sequelize.sync().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Health check: http://localhost:${PORT}/health`);
+  });
 });
