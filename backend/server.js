@@ -10,22 +10,47 @@ const User = require('./models/User');
 const Otp = require('./models/Otp');
 
 const app = express();
+
+// Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true
+}));
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: 'Too many requests from this IP, please try again later.'
 });
-app.use(limiter);
+app.use('/api/', limiter);
 
-// Email transporter
-const transporter = nodemailer.createTransporter({
+// Input validation middleware
+const validateEmail = (email) => {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+};
+
+const validatePassword = (password) => {
+  return password && password.length >= 6;
+};
+
+// Email transporter (FIXED: createTransport not createTransporter)
+const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
+  }
+});
+
+// Verify email configuration on startup
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('Email configuration error:', error);
+  } else {
+    console.log('Email server is ready to send messages');
   }
 });
 
@@ -53,11 +78,17 @@ const sendOTPEmail = async (email, otp) => {
     `
   };
 
-  await transporter.sendMail(mailOptions);
+  try {
+    await transporter.sendMail(mailOptions);
+    return true;
+  } catch (error) {
+    console.error('Email send error:', error);
+    throw new Error('Failed to send email');
+  }
 };
 
 // Register endpoint
-app.post('/register', async (req, res) => {
+app.post('/api/register', async (req, res) => {
   try {
     const { email, password, name } = req.body;
 
@@ -65,15 +96,21 @@ app.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
-    // Check if user already exists
+    if (!validateEmail(email)) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
+
+    if (!validatePassword(password)) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Generate and send OTP
     const otp = generateOTP();
-    const otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+    const otpExpiry = Date.now() + 10 * 60 * 1000;
     
     await Otp.create({
       email,
@@ -92,13 +129,17 @@ app.post('/register', async (req, res) => {
 });
 
 // Verify registration OTP
-app.post('/verify-register', async (req, res) => {
+app.post('/api/verify-register', async (req, res) => {
   try {
     const { email, otp } = req.body;
 
+    if (!email || !otp) {
+      return res.status(400).json({ message: 'Email and OTP are required' });
+    }
+
     const otpData = await Otp.findOne({ where: { email, otp, type: 'register' } });
     if (!otpData) {
-      return res.status(400).json({ message: 'Invalid or expired OTP' });
+      return res.status(400).json({ message: 'Invalid OTP' });
     }
 
     if (Date.now() > otpData.expiry) {
@@ -106,7 +147,6 @@ app.post('/verify-register', async (req, res) => {
       return res.status(400).json({ message: 'OTP expired' });
     }
 
-    // Create user
     const hashedPassword = await bcrypt.hash(otpData.userData.password, 10);
     const newUser = await User.create({
       email: otpData.userData.email,
@@ -118,7 +158,7 @@ app.post('/verify-register', async (req, res) => {
 
     const token = jwt.sign(
       { userId: newUser.id, email: newUser.email },
-      process.env.JWT_SECRET || 'fallback_secret',
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
@@ -134,9 +174,13 @@ app.post('/verify-register', async (req, res) => {
 });
 
 // Request OTP for login
-app.post('/request-otp', async (req, res) => {
+app.post('/api/request-otp', async (req, res) => {
   try {
     const { email } = req.body;
+
+    if (!email || !validateEmail(email)) {
+      return res.status(400).json({ message: 'Valid email is required' });
+    }
 
     const user = await User.findOne({ where: { email } });
     if (!user) {
@@ -144,7 +188,7 @@ app.post('/request-otp', async (req, res) => {
     }
 
     const otp = generateOTP();
-    const otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+    const otpExpiry = Date.now() + 10 * 60 * 1000;
     
     await Otp.create({
       email,
@@ -162,25 +206,27 @@ app.post('/request-otp', async (req, res) => {
 });
 
 // Login endpoint
-app.post('/login', async (req, res) => {
+app.post('/api/login', async (req, res) => {
   try {
     const { email, password, otp } = req.body;
+
+    if (!email || !password || !otp) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
 
     const user = await User.findOne({ where: { email } });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Verify password
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
       return res.status(400).json({ message: 'Invalid password' });
     }
 
-    // Verify OTP
     const otpData = await Otp.findOne({ where: { email, otp, type: 'login' } });
     if (!otpData) {
-      return res.status(400).json({ message: 'Please request OTP first' });
+      return res.status(400).json({ message: 'Invalid OTP' });
     }
 
     if (Date.now() > otpData.expiry) {
@@ -192,7 +238,7 @@ app.post('/login', async (req, res) => {
 
     const token = jwt.sign(
       { userId: user.id, email: user.email },
-      process.env.JWT_SECRET || 'fallback_secret',
+      process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
@@ -216,7 +262,7 @@ const authenticateToken = (req, res, next) => {
     return res.status(401).json({ message: 'Access token required' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret', (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) {
       return res.status(403).json({ message: 'Invalid token' });
     }
@@ -226,30 +272,55 @@ const authenticateToken = (req, res, next) => {
 };
 
 // Protected profile route
-app.get('/profile', authenticateToken, async (req, res) => {
-  const user = await User.findByPk(req.user.userId);
-  if (!user) {
-    return res.status(404).json({ message: 'User not found' });
+app.get('/api/profile', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json({ 
+      id: user.id, 
+      email: user.email, 
+      name: user.name,
+      createdAt: user.createdAt
+    });
+  } catch (error) {
+    console.error('Profile error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
-  
-  res.json({ 
-    id: user.id, 
-    email: user.email, 
-    name: user.name,
-    createdAt: user.createdAt
-  });
 });
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  res.status(500).json({ message: 'Internal server error' });
 });
 
 const PORT = process.env.PORT || 5000;
 
+// Database sync and server start
 sequelize.sync().then(() => {
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Health check: http://localhost:${PORT}/health`);
+    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`✅ Health check: http://localhost:${PORT}/health`);
   });
+}).catch((error) => {
+  console.error('❌ Database connection failed:', error);
+  process.exit(1);
 });
