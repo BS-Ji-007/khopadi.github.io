@@ -1,135 +1,93 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { Link } from 'react-router-dom';
+import { tmdbAPI } from '../utils/api';
+import { getImageUrl } from '../config/tmdb';
 import { useTheme } from '../App';
-import MovieCard from '../components/MovieCard';
-
-const OMDB_API_KEY = 'da8322ee';
-const OMDB_BASE_URL = 'https://www.omdbapi.com';
 
 const Upcoming = () => {
   const { colors } = useTheme();
   const [movies, setMovies] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('2024');
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     fetchUpcoming();
-  }, [currentPage, searchQuery]);
+  }, [page]);
 
   const fetchUpcoming = async () => {
     try {
       setLoading(true);
-      setError('');
-      const url = `${OMDB_BASE_URL}/?apikey=${OMDB_API_KEY}&s=marvel&y=${searchQuery}&type=movie&page=${currentPage}`;
-      const res = await axios.get(url);
-      if (res.data && res.data.Response === 'True') {
-        setMovies(res.data.Search);
-      } else {
-        setMovies([]);
-        setError(res.data?.Error || 'No results found');
-      }
-    } catch (e) {
-      setError('Failed to fetch upcoming movies');
-      setMovies([]);
+      const data = await tmdbAPI.getUpcomingMovies(page);
+      setMovies(data.results);
+    } catch (error) {
+      console.error('Error fetching upcoming movies:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const years = ['2024', '2023', '2022', '2021', '2020'];
-  const franchises = ['marvel', 'dc', 'disney', 'star wars', 'fast furious'];
-
   return (
-    <div className={`pt-20 ${colors.bg} ${colors.text} min-h-screen`}>
+    <div className="pt-20 min-h-screen">
       <div className="container mx-auto px-6 py-8">
-        <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-          Upcoming & Recent Releases
-        </h1>
+        <h1 className="text-4xl font-bold mb-8">Upcoming Movies</h1>
+        <p className="text-gray-400 mb-8">Get ready for these amazing releases!</p>
 
-        {/* Year Filter */}
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold mb-4">Filter by Year</h3>
-          <div className="flex flex-wrap gap-3">
-            {years.map((year) => (
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-600"></div>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+              {movies.map((movie) => (
+                <Link
+                  key={movie.id}
+                  to={`/movie/${movie.id}`}
+                  className="group cursor-pointer"
+                >
+                  <div className="relative overflow-hidden rounded-lg shadow-lg transition-transform group-hover:scale-105">
+                    <img
+                      src={getImageUrl(movie.poster_path, 'medium', 'poster')}
+                      alt={movie.title}
+                      className="w-full h-auto"
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/342x513?text=No+Poster';
+                      }}
+                    />
+                    <div className="absolute top-2 right-2 bg-green-600 text-white px-2 py-1 rounded text-xs font-bold">
+                      UPCOMING
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                      <div>
+                        <h3 className="font-semibold text-sm line-clamp-2">{movie.title}</h3>
+                        <p className="text-yellow-500 text-xs mt-1">⭐ {movie.vote_average.toFixed(1)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <h3 className="mt-2 font-semibold text-sm line-clamp-2">{movie.title}</h3>
+                  <p className="text-xs text-green-400">Release: {movie.release_date}</p>
+                </Link>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            <div className="flex justify-center items-center mt-12 space-x-4">
               <button
-                key={year}
-                onClick={() => {
-                  setSearchQuery(year);
-                  setCurrentPage(1);
-                }}
-                className={`px-4 py-2 rounded-full font-medium transition-colors duration-200 ${
-                  searchQuery === year
-                    ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-black'
-                    : `${colors.card} hover:bg-yellow-400 hover:text-black`
-                }`}
+                onClick={() => setPage(Math.max(1, page - 1))}
+                disabled={page === 1}
+                className="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {year}
+                Previous
               </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Franchise Filter */}
-        <div className="mb-8">
-          <h3 className="text-xl font-semibold mb-4">Popular Franchises</h3>
-          <div className="flex flex-wrap gap-3">
-            {franchises.map((franchise) => (
+              <span className="text-gray-400">Page {page}</span>
               <button
-                key={franchise}
-                onClick={() => {
-                  setSearchQuery(franchise);
-                  setCurrentPage(1);
-                }}
-                className={`px-4 py-2 rounded-full font-medium transition-colors duration-200 ${
-                  searchQuery === franchise
-                    ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-black'
-                    : `${colors.card} hover:bg-yellow-400 hover:text-black`
-                }`}
+                onClick={() => setPage(page + 1)}
+                className="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
               >
-                {franchise.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                Next
               </button>
-            ))}
-          </div>
-        </div>
-
-        {loading && <p className="text-center text-yellow-400 text-lg">Loading upcoming movies...</p>}
-        {error && <p className="text-center text-red-400 text-lg">{error}</p>}
-
-        {/* Movies Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-          {movies.map((movie) => (
-            <MovieCard
-              key={movie.imdbID}
-              movie={{
-                id: movie.imdbID,
-                title: movie.Title,
-                poster_path: movie.Poster !== 'N/A' ? movie.Poster : '',
-                year: movie.Year
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Pagination */}
-        {movies.length > 0 && (
-          <div className="flex justify-center mt-8 space-x-4">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <span className="px-4 py-2 text-lg font-medium">Page {currentPage}</span>
-            <button
-              onClick={() => setCurrentPage(prev => prev + 1)}
-              className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-medium rounded-lg"
-            >
-              Next
-            </button>
-          </div>
+            </div>
+          </>
         )}
       </div>
     </div>

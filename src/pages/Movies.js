@@ -1,111 +1,162 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { Link } from 'react-router-dom';
+import { tmdbAPI } from '../utils/api';
+import { getImageUrl } from '../config/tmdb';
 import { useTheme } from '../App';
-import MovieCard from '../components/MovieCard';
-
-const OMDB_API_KEY = 'da8322ee';
-const OMDB_BASE_URL = 'https://www.omdbapi.com';
 
 const Movies = () => {
   const { colors } = useTheme();
   const [movies, setMovies] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('action');
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [category, setCategory] = useState('popular');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchMovies();
-  }, [currentPage, searchQuery]);
+  }, [page, category]);
 
   const fetchMovies = async () => {
     try {
       setLoading(true);
-      setError('');
-      const url = `${OMDB_BASE_URL}/?apikey=${OMDB_API_KEY}&s=${searchQuery}&type=movie&page=${currentPage}`;
-      const res = await axios.get(url);
-      if (res.data && res.data.Response === 'True') {
-        setMovies(res.data.Search);
-      } else {
-        setMovies([]);
-        setError(res.data?.Error || 'No results found');
+      let data;
+      switch (category) {
+        case 'trending':
+          data = await tmdbAPI.getTrendingMovies(page);
+          break;
+        case 'top_rated':
+          data = await tmdbAPI.getTopRatedMovies(page);
+          break;
+        case 'now_playing':
+          data = await tmdbAPI.getNowPlayingMovies(page);
+          break;
+        default:
+          data = await tmdbAPI.getPopularMovies(page);
       }
-    } catch (e) {
-      setError('Failed to fetch movies');
-      setMovies([]);
+      setMovies(data.results);
+    } catch (error) {
+      console.error('Error fetching movies:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const genres = ['action', 'comedy', 'drama', 'horror', 'thriller', 'romance', 'sci-fi', 'adventure'];
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) {
+      fetchMovies();
+      return;
+    }
+    try {
+      setLoading(true);
+      const data = await tmdbAPI.searchMovies(searchQuery);
+      setMovies(data.results);
+    } catch (error) {
+      console.error('Error searching movies:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className={`pt-20 ${colors.bg} ${colors.text} min-h-screen`}>
+    <div className="pt-20 min-h-screen">
       <div className="container mx-auto px-6 py-8">
-        <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-          Movies Collection
-        </h1>
+        {/* Header */}
+        <h1 className="text-4xl font-bold mb-8">Movies</h1>
 
-        {/* Genre Filter */}
-        <div className="mb-8">
-          <h3 className="text-xl font-semibold mb-4">Browse by Genre</h3>
-          <div className="flex flex-wrap gap-3">
-            {genres.map((genre) => (
+        {/* Search & Filters */}
+        <div className="mb-8 space-y-4">
+          <form onSubmit={handleSearch} className="flex gap-3">
+            <input
+              type="text"
+              placeholder="Search movies..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={`flex-1 p-3 ${colors.input} rounded-lg`}
+            />
+            <button
+              type="submit"
+              className="px-6 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition-colors"
+            >
+              Search
+            </button>
+          </form>
+
+          <div className="flex gap-3 flex-wrap">
+            {['popular', 'trending', 'top_rated', 'now_playing'].map((cat) => (
               <button
-                key={genre}
+                key={cat}
                 onClick={() => {
-                  setSearchQuery(genre);
-                  setCurrentPage(1);
+                  setCategory(cat);
+                  setPage(1);
+                  setSearchQuery('');
                 }}
-                className={`px-4 py-2 rounded-full font-medium transition-colors duration-200 ${
-                  searchQuery === genre
-                    ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-black'
-                    : `${colors.card} hover:bg-yellow-400 hover:text-black`
+                className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                  category === cat
+                    ? 'bg-red-600 text-white'
+                    : `${colors.card} hover:bg-gray-700`
                 }`}
               >
-                {genre.charAt(0).toUpperCase() + genre.slice(1)}
+                {cat.replace('_', ' ').toUpperCase()}
               </button>
             ))}
           </div>
         </div>
 
-        {loading && <p className="text-center text-yellow-400 text-lg">Loading movies...</p>}
-        {error && <p className="text-center text-red-400 text-lg">{error}</p>}
-
         {/* Movies Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-          {movies.map((movie) => (
-            <MovieCard
-              key={movie.imdbID}
-              movie={{
-                id: movie.imdbID,
-                title: movie.Title,
-                poster_path: movie.Poster !== 'N/A' ? movie.Poster : '',
-                year: movie.Year
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Pagination */}
-        {movies.length > 0 && (
-          <div className="flex justify-center mt-8 space-x-4">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <span className="px-4 py-2 text-lg font-medium">Page {currentPage}</span>
-            <button
-              onClick={() => setCurrentPage(prev => prev + 1)}
-              className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-medium rounded-lg"
-            >
-              Next
-            </button>
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-600"></div>
           </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+              {movies.map((movie) => (
+                <Link
+                  key={movie.id}
+                  to={`/movie/${movie.id}`}
+                  className="group cursor-pointer"
+                >
+                  <div className="relative overflow-hidden rounded-lg shadow-lg transition-transform group-hover:scale-105">
+                    <img
+                      src={getImageUrl(movie.poster_path, 'medium', 'poster')}
+                      alt={movie.title}
+                      className="w-full h-auto"
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/342x513?text=No+Poster';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                      <div>
+                        <h3 className="font-semibold text-sm line-clamp-2">{movie.title}</h3>
+                        <p className="text-yellow-500 text-xs mt-1">⭐ {movie.vote_average.toFixed(1)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <h3 className="mt-2 font-semibold text-sm line-clamp-2">{movie.title}</h3>
+                  <p className="text-xs text-gray-400">{movie.release_date?.slice(0, 4)}</p>
+                </Link>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            <div className="flex justify-center items-center mt-12 space-x-4">
+              <button
+                onClick={() => setPage(Math.max(1, page - 1))}
+                disabled={page === 1}
+                className="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              <span className="text-gray-400">Page {page}</span>
+              <button
+                onClick={() => setPage(page + 1)}
+                className="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>
