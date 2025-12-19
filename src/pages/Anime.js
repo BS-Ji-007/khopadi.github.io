@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchAnime } from '../utils/api';
+import { tmdb } from '../utils/multiApi';
 import MovieCard from '../components/MovieCard';
 
 const Anime = () => {
@@ -14,7 +14,7 @@ const Anime = () => {
 
   const loadAnimes = async () => {
     setLoading(true);
-    const data = await fetchAnime(page);
+    const data = await tmdb.anime(page);
     setAnimes(data.results || []);
     setTotalPages(data.total_pages || 1);
     setLoading(false);
@@ -26,8 +26,8 @@ const Anime = () => {
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="mb-2 text-4xl font-bold">Popular Anime</h1>
-          <p className="text-gray-400">Watch the best anime series</p>
+          <h1 className="mb-2 text-4xl font-bold">✨ Popular Anime</h1>
+          <p className="text-gray-400">Watch the best anime series from Japan</p>
         </div>
 
         {/* Anime Grid */}
@@ -52,7 +52,7 @@ const Anime = () => {
                 disabled={page === 1}
                 className="rounded-lg bg-gray-800 px-6 py-2 font-semibold text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
               >
-                Previous
+                ← Previous
               </button>
               <span className="text-lg">
                 Page {page} of {Math.min(totalPages, 500)}
@@ -62,13 +62,13 @@ const Anime = () => {
                 disabled={page >= totalPages || page >= 500}
                 className="rounded-lg bg-red-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
               >
-                Next
+                Next →
               </button>
             </div>
           </>
         ) : (
           <div className="py-20 text-center">
-            <p className="text-xl text-gray-400">No anime found</p>
+            <p className="text-xl text-gray-400">🚨 No anime found</p>
           </div>
         )}
       </div>

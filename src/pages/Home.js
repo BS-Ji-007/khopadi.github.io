@@ -1,22 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { fetchTrending, searchContent } from '../utils/api';
+import { tmdb, smartSearch, quotes } from '../utils/multiApi';
 import MovieCard from '../components/MovieCard';
 
 const Home = () => {
   const [trending, setTrending] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [quote, setQuote] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
 
   useEffect(() => {
-    loadTrending();
+    loadData();
   }, []);
 
-  const loadTrending = async () => {
+  const loadData = async () => {
     setLoading(true);
-    const data = await fetchTrending();
-    setTrending(data);
+    const [trendingData, quoteData] = await Promise.all([
+      tmdb.trending(),
+      quotes.random()
+    ]);
+    setTrending(trendingData);
+    setQuote(quoteData);
     setLoading(false);
   };
 
@@ -27,23 +32,31 @@ const Home = () => {
       return;
     }
     setSearching(true);
-    const data = await searchContent(searchQuery);
-    setSearchResults(data.results || []);
+    const result = await smartSearch(searchQuery);
+    setSearchResults(result.data || []);
     setSearching(false);
   };
 
   const displayMovies = searchResults.length > 0 ? searchResults : trending;
-  const title = searchResults.length > 0 ? 'Search Results' : 'Trending This Week';
+  const title = searchResults.length > 0 ? 'Search Results' : 'Trending This Week 🔥';
 
   return (
     <div className="min-h-screen pt-20 pb-10">
-      {/* Hero Section */}
+      {/* Hero Section with Quote */}
       <div className="relative h-96 bg-gradient-to-r from-red-900 via-gray-900 to-black">
         <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
           <h1 className="mb-4 text-5xl font-bold text-white md:text-6xl">
             Welcome to <span className="bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">Khopadi Movies</span>
           </h1>
-          <p className="mb-8 text-xl text-gray-300">Discover millions of movies, TV shows and anime</p>
+          <p className="mb-2 text-xl text-gray-300">Discover millions of movies, TV shows and anime</p>
+          
+          {/* Quote of the Day */}
+          {quote && (
+            <div className="mb-6 max-w-2xl">
+              <p className="text-sm italic text-gray-400">"{quote.quote}"</p>
+              <p className="text-xs text-red-400">- {quote.role}</p>
+            </div>
+          )}
           
           {/* Search Bar */}
           <form onSubmit={handleSearch} className="w-full max-w-2xl">
@@ -60,7 +73,7 @@ const Home = () => {
                 disabled={searching}
                 className="rounded-lg bg-red-600 px-8 py-4 font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
               >
-                {searching ? 'Searching...' : 'Search'}
+                {searching ? '🔍 Searching...' : '🔍 Search'}
               </button>
             </div>
           </form>
@@ -79,7 +92,7 @@ const Home = () => {
               }}
               className="text-red-500 hover:text-red-400"
             >
-              Clear Search
+              ✖ Clear Search
             </button>
           )}
         </div>
@@ -102,7 +115,8 @@ const Home = () => {
           </div>
         ) : (
           <div className="py-20 text-center">
-            <p className="text-xl text-gray-400">No results found</p>
+            <p className="text-xl text-gray-400">🚨 No results found</p>
+            <p className="text-sm text-gray-500 mt-2">Try a different search term</p>
           </div>
         )}
       </div>
