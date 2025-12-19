@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { tmdbAPI } from '../utils/api';
-import { getImageUrl } from '../config/tmdb';
+import { tmdb, getImageUrl } from '../utils/multiApi';
 import { useTheme } from '../App';
 
 const MovieDetails = () => {
@@ -19,7 +18,7 @@ const MovieDetails = () => {
   const fetchMovieDetails = async () => {
     try {
       setLoading(true);
-      const data = await tmdbAPI.getMovieDetails(id);
+      const data = await tmdb.details(id, 'movie');
       setMovie(data);
     } catch (error) {
       console.error('Error fetching movie details:', error);
@@ -48,7 +47,7 @@ const MovieDetails = () => {
       <div className="relative h-[80vh]">
         <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent z-10"></div>
         <img
-          src={getImageUrl(movie.backdrop_path, 'original', 'backdrop')}
+          src={getImageUrl(movie.backdrop_path, 'original')}
           alt={movie.title}
           className="w-full h-full object-cover"
         />
@@ -58,16 +57,16 @@ const MovieDetails = () => {
               <h1 className="text-5xl md:text-7xl font-bold mb-4">{movie.title}</h1>
               <div className="flex items-center space-x-4 mb-6">
                 <span className="bg-yellow-500 text-black px-3 py-1 rounded font-bold text-lg">
-                  ⭐ {movie.vote_average.toFixed(1)}
+                  ⭐ {movie.vote_average?.toFixed(1) || 'N/A'}
                 </span>
-                <span className="text-gray-300">{new Date(movie.release_date).getFullYear()}</span>
-                <span className="text-gray-300">{movie.runtime} min</span>
+                <span className="text-gray-300">{movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A'}</span>
+                <span className="text-gray-300">{movie.runtime || 0} min</span>
                 <span className="text-gray-300">
-                  {movie.genres?.map((g) => g.name).join(', ')}
+                  {movie.genres?.map((g) => g.name).join(', ') || 'N/A'}
                 </span>
               </div>
               <p className="text-lg md:text-xl mb-8 text-gray-300 leading-relaxed">
-                {movie.overview}
+                {movie.overview || 'No description available'}
               </p>
               <div className="flex space-x-4">
                 {trailer && (
@@ -78,11 +77,11 @@ const MovieDetails = () => {
                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
                     </svg>
-                    <span>Watch Trailer</span>
+                    <span>▶ Watch Trailer</span>
                   </button>
                 )}
                 <button className="bg-gray-800 hover:bg-gray-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors">
-                  Add to Watchlist
+                  ➕ Add to Watchlist
                 </button>
               </div>
             </div>
@@ -118,18 +117,15 @@ const MovieDetails = () => {
         {/* Cast */}
         {movie.credits?.cast && movie.credits.cast.length > 0 && (
           <div className="mb-12">
-            <h2 className="text-3xl font-bold mb-6">Cast</h2>
+            <h2 className="text-3xl font-bold mb-6">🎭 Cast</h2>
             <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide">
               {movie.credits.cast.slice(0, 10).map((person) => (
                 <div key={person.id} className="flex-shrink-0 w-32">
                   <img
-                    src={
-                      person.profile_path
-                        ? getImageUrl(person.profile_path, '/w185', 'profile')
-                        : 'https://via.placeholder.com/185x278?text=No+Image'
-                    }
+                    src={person.profile_path ? getImageUrl(person.profile_path, 'w185') : '/placeholder-movie.jpg'}
                     alt={person.name}
                     className="w-32 h-48 object-cover rounded-lg mb-2"
+                    onError={(e) => e.target.src = '/placeholder-movie.jpg'}
                   />
                   <p className="font-semibold text-sm">{person.name}</p>
                   <p className="text-xs text-gray-400">{person.character}</p>
@@ -142,7 +138,7 @@ const MovieDetails = () => {
         {/* Similar Movies */}
         {movie.similar?.results && movie.similar.results.length > 0 && (
           <div>
-            <h2 className="text-3xl font-bold mb-6">Similar Movies</h2>
+            <h2 className="text-3xl font-bold mb-6">🎬 Similar Movies</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
               {movie.similar.results.slice(0, 12).map((similar) => (
                 <Link
@@ -152,17 +148,15 @@ const MovieDetails = () => {
                 >
                   <div className="relative overflow-hidden rounded-lg shadow-lg transition-transform group-hover:scale-105">
                     <img
-                      src={getImageUrl(similar.poster_path, 'medium', 'poster')}
+                      src={getImageUrl(similar.poster_path, 'w342')}
                       alt={similar.title}
                       className="w-full h-auto"
-                      onError={(e) => {
-                        e.target.src = 'https://via.placeholder.com/342x513?text=No+Poster';
-                      }}
+                      onError={(e) => e.target.src = '/placeholder-movie.jpg'}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
                       <div>
                         <h3 className="font-semibold text-sm line-clamp-2">{similar.title}</h3>
-                        <p className="text-yellow-500 text-xs mt-1">⭐ {similar.vote_average.toFixed(1)}</p>
+                        <p className="text-yellow-500 text-xs mt-1">⭐ {similar.vote_average?.toFixed(1) || 'N/A'}</p>
                       </div>
                     </div>
                   </div>
