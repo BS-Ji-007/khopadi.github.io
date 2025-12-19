@@ -5,7 +5,7 @@ import axios from 'axios';
 // ======================
 
 // TMDB API (Primary - Best for movies/TV)
-const TMDB_API_KEY = 'YOUR_TMDB_API_KEY';
+const TMDB_API_KEY = 'b97bbe91d4e62db2ae1eea9d5bf2f2aa';
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE = 'https://image.tmdb.org/t/p';
 
