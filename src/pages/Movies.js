@@ -1,162 +1,75 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { tmdbAPI } from '../utils/api';
-import { getImageUrl } from '../config/tmdb';
-import { useTheme } from '../App';
+import { fetchMovies } from '../utils/api';
+import MovieCard from '../components/MovieCard';
 
 const Movies = () => {
-  const { colors } = useTheme();
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [category, setCategory] = useState('popular');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    fetchMovies();
-  }, [page, category]);
+    loadMovies();
+  }, [page]);
 
-  const fetchMovies = async () => {
-    try {
-      setLoading(true);
-      let data;
-      switch (category) {
-        case 'trending':
-          data = await tmdbAPI.getTrendingMovies(page);
-          break;
-        case 'top_rated':
-          data = await tmdbAPI.getTopRatedMovies(page);
-          break;
-        case 'now_playing':
-          data = await tmdbAPI.getNowPlayingMovies(page);
-          break;
-        default:
-          data = await tmdbAPI.getPopularMovies(page);
-      }
-      setMovies(data.results);
-    } catch (error) {
-      console.error('Error fetching movies:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) {
-      fetchMovies();
-      return;
-    }
-    try {
-      setLoading(true);
-      const data = await tmdbAPI.searchMovies(searchQuery);
-      setMovies(data.results);
-    } catch (error) {
-      console.error('Error searching movies:', error);
-    } finally {
-      setLoading(false);
-    }
+  const loadMovies = async () => {
+    setLoading(true);
+    const data = await fetchMovies(page);
+    setMovies(data.results || []);
+    setTotalPages(data.total_pages || 1);
+    setLoading(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <div className="pt-20 min-h-screen">
-      <div className="container mx-auto px-6 py-8">
+    <div className="min-h-screen pt-20 pb-10">
+      <div className="container mx-auto px-4">
         {/* Header */}
-        <h1 className="text-4xl font-bold mb-8">Movies</h1>
-
-        {/* Search & Filters */}
-        <div className="mb-8 space-y-4">
-          <form onSubmit={handleSearch} className="flex gap-3">
-            <input
-              type="text"
-              placeholder="Search movies..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={`flex-1 p-3 ${colors.input} rounded-lg`}
-            />
-            <button
-              type="submit"
-              className="px-6 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition-colors"
-            >
-              Search
-            </button>
-          </form>
-
-          <div className="flex gap-3 flex-wrap">
-            {['popular', 'trending', 'top_rated', 'now_playing'].map((cat) => (
-              <button
-                key={cat}
-                onClick={() => {
-                  setCategory(cat);
-                  setPage(1);
-                  setSearchQuery('');
-                }}
-                className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-                  category === cat
-                    ? 'bg-red-600 text-white'
-                    : `${colors.card} hover:bg-gray-700`
-                }`}
-              >
-                {cat.replace('_', ' ').toUpperCase()}
-              </button>
-            ))}
-          </div>
+        <div className="mb-8">
+          <h1 className="mb-2 text-4xl font-bold">Popular Movies</h1>
+          <p className="text-gray-400">Discover the most popular movies</p>
         </div>
 
         {/* Movies Grid */}
         {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-600"></div>
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {[...Array(18)].map((_, i) => (
+              <div key={i} className="aspect-[2/3] animate-pulse rounded-lg bg-gray-800" />
+            ))}
           </div>
-        ) : (
+        ) : movies.length > 0 ? (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+            <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
               {movies.map((movie) => (
-                <Link
-                  key={movie.id}
-                  to={`/movie/${movie.id}`}
-                  className="group cursor-pointer"
-                >
-                  <div className="relative overflow-hidden rounded-lg shadow-lg transition-transform group-hover:scale-105">
-                    <img
-                      src={getImageUrl(movie.poster_path, 'medium', 'poster')}
-                      alt={movie.title}
-                      className="w-full h-auto"
-                      onError={(e) => {
-                        e.target.src = 'https://via.placeholder.com/342x513?text=No+Poster';
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                      <div>
-                        <h3 className="font-semibold text-sm line-clamp-2">{movie.title}</h3>
-                        <p className="text-yellow-500 text-xs mt-1">⭐ {movie.vote_average.toFixed(1)}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <h3 className="mt-2 font-semibold text-sm line-clamp-2">{movie.title}</h3>
-                  <p className="text-xs text-gray-400">{movie.release_date?.slice(0, 4)}</p>
-                </Link>
+                <MovieCard key={movie.id} movie={movie} type="movie" />
               ))}
             </div>
 
             {/* Pagination */}
-            <div className="flex justify-center items-center mt-12 space-x-4">
+            <div className="mt-10 flex items-center justify-center gap-4">
               <button
-                onClick={() => setPage(Math.max(1, page - 1))}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="rounded-lg bg-gray-800 px-6 py-2 font-semibold text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
               >
                 Previous
               </button>
-              <span className="text-gray-400">Page {page}</span>
+              <span className="text-lg">
+                Page {page} of {Math.min(totalPages, 500)}
+              </span>
               <button
-                onClick={() => setPage(page + 1)}
-                className="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+                onClick={() => setPage(p => Math.min(500, p + 1))}
+                disabled={page >= totalPages || page >= 500}
+                className="rounded-lg bg-red-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
               >
                 Next
               </button>
             </div>
           </>
+        ) : (
+          <div className="py-20 text-center">
+            <p className="text-xl text-gray-400">No movies found</p>
+          </div>
         )}
       </div>
     </div>

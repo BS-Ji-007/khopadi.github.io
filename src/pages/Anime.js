@@ -1,93 +1,75 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { tmdbAPI } from '../utils/api';
-import { getImageUrl } from '../config/tmdb';
-import { useTheme } from '../App';
+import { fetchAnime } from '../utils/api';
+import MovieCard from '../components/MovieCard';
 
 const Anime = () => {
-  const { colors } = useTheme();
-  const [anime, setAnime] = useState([]);
+  const [animes, setAnimes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    fetchAnime();
+    loadAnimes();
   }, [page]);
 
-  const fetchAnime = async () => {
-    try {
-      setLoading(true);
-      const data = await tmdbAPI.getAnime(page);
-      setAnime(data.results);
-    } catch (error) {
-      console.error('Error fetching anime:', error);
-    } finally {
-      setLoading(false);
-    }
+  const loadAnimes = async () => {
+    setLoading(true);
+    const data = await fetchAnime(page);
+    setAnimes(data.results || []);
+    setTotalPages(data.total_pages || 1);
+    setLoading(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <div className="pt-20 min-h-screen">
-      <div className="container mx-auto px-6 py-8">
-        <h1 className="text-4xl font-bold mb-8">Anime</h1>
-        <p className="text-gray-400 mb-8">Discover the best Japanese animation series</p>
+    <div className="min-h-screen pt-20 pb-10">
+      <div className="container mx-auto px-4">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="mb-2 text-4xl font-bold">Popular Anime</h1>
+          <p className="text-gray-400">Watch the best anime series</p>
+        </div>
 
+        {/* Anime Grid */}
         {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-600"></div>
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {[...Array(18)].map((_, i) => (
+              <div key={i} className="aspect-[2/3] animate-pulse rounded-lg bg-gray-800" />
+            ))}
           </div>
-        ) : (
+        ) : animes.length > 0 ? (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-              {anime.map((show) => (
-                <Link
-                  key={show.id}
-                  to={`/tv/${show.id}`}
-                  className="group cursor-pointer"
-                >
-                  <div className="relative overflow-hidden rounded-lg shadow-lg transition-transform group-hover:scale-105">
-                    <img
-                      src={getImageUrl(show.poster_path, 'medium', 'poster')}
-                      alt={show.name}
-                      className="w-full h-auto"
-                      onError={(e) => {
-                        e.target.src = 'https://via.placeholder.com/342x513?text=No+Poster';
-                      }}
-                    />
-                    <div className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded text-xs font-bold">
-                      ANIME
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
-                      <div>
-                        <h3 className="font-semibold text-sm line-clamp-2">{show.name}</h3>
-                        <p className="text-yellow-500 text-xs mt-1">⭐ {show.vote_average.toFixed(1)}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <h3 className="mt-2 font-semibold text-sm line-clamp-2">{show.name}</h3>
-                  <p className="text-xs text-gray-400">{show.first_air_date?.slice(0, 4)}</p>
-                </Link>
+            <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {animes.map((anime) => (
+                <MovieCard key={anime.id} movie={anime} type="tv" />
               ))}
             </div>
 
             {/* Pagination */}
-            <div className="flex justify-center items-center mt-12 space-x-4">
+            <div className="mt-10 flex items-center justify-center gap-4">
               <button
-                onClick={() => setPage(Math.max(1, page - 1))}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="rounded-lg bg-gray-800 px-6 py-2 font-semibold text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
               >
                 Previous
               </button>
-              <span className="text-gray-400">Page {page}</span>
+              <span className="text-lg">
+                Page {page} of {Math.min(totalPages, 500)}
+              </span>
               <button
-                onClick={() => setPage(page + 1)}
-                className="px-6 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
+                onClick={() => setPage(p => Math.min(500, p + 1))}
+                disabled={page >= totalPages || page >= 500}
+                className="rounded-lg bg-red-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
               >
                 Next
               </button>
             </div>
           </>
+        ) : (
+          <div className="py-20 text-center">
+            <p className="text-xl text-gray-400">No anime found</p>
+          </div>
         )}
       </div>
     </div>
