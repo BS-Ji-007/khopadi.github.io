@@ -5,12 +5,23 @@ import { useTheme } from '../App';
 const Navbar = () => {
   const { isDarkMode, toggleTheme, colors } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isAuthenticated] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/?search=${encodeURIComponent(searchQuery)}`);
+      setIsSearchOpen(false);
+      setSearchQuery('');
+    }
   };
 
   return (
@@ -38,6 +49,17 @@ const Navbar = () => {
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
+            {/* Search Icon */}
+            <button
+              onClick={() => setIsSearchOpen(!isSearchOpen)}
+              className="p-2 rounded-lg hover:bg-gray-700 transition-colors"
+              aria-label="Search"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
@@ -100,24 +122,58 @@ const Navbar = () => {
             </button>
           </div>
         </div>
+
+        {/* Search Bar (Desktop) */}
+        {isSearchOpen && (
+          <div className="pb-4 animate-slide-down">
+            <form onSubmit={handleSearch} className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Search movies, TV shows, anime..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 px-4 py-2 bg-gray-800 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
+                autoFocus
+              />
+              <button
+                type="submit"
+                className="px-6 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition-colors"
+              >
+                🔍 Search
+              </button>
+            </form>
+          </div>
+        )}
       </div>
 
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 bg-gray-800">
-            <Link to="/" className="block px-3 py-2 rounded-md hover:bg-gray-700">Home</Link>
-            <Link to="/movies" className="block px-3 py-2 rounded-md hover:bg-gray-700">Movies</Link>
-            <Link to="/tv-shows" className="block px-3 py-2 rounded-md hover:bg-gray-700">TV Shows</Link>
-            <Link to="/anime" className="block px-3 py-2 rounded-md hover:bg-gray-700">Anime</Link>
-            <Link to="/upcoming" className="block px-3 py-2 rounded-md hover:bg-gray-700">Upcoming</Link>
+            <Link to="/" className="block px-3 py-2 rounded-md hover:bg-gray-700" onClick={() => setIsMenuOpen(false)}>Home</Link>
+            <Link to="/movies" className="block px-3 py-2 rounded-md hover:bg-gray-700" onClick={() => setIsMenuOpen(false)}>Movies</Link>
+            <Link to="/tv-shows" className="block px-3 py-2 rounded-md hover:bg-gray-700" onClick={() => setIsMenuOpen(false)}>TV Shows</Link>
+            <Link to="/anime" className="block px-3 py-2 rounded-md hover:bg-gray-700" onClick={() => setIsMenuOpen(false)}>Anime</Link>
+            <Link to="/upcoming" className="block px-3 py-2 rounded-md hover:bg-gray-700" onClick={() => setIsMenuOpen(false)}>Upcoming</Link>
+            
+            {/* Mobile Search */}
+            <form onSubmit={handleSearch} className="px-3 py-2">
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+            </form>
+            
             {!isAuthenticated ? (
               <>
-                <Link to="/login" className="block px-3 py-2 rounded-md bg-gray-700 hover:bg-gray-600">Login</Link>
-                <Link to="/register" className="block px-3 py-2 rounded-md bg-red-600 hover:bg-red-700">Register</Link>
+                <Link to="/login" className="block px-3 py-2 rounded-md bg-gray-700 hover:bg-gray-600" onClick={() => setIsMenuOpen(false)}>Login</Link>
+                <Link to="/register" className="block px-3 py-2 rounded-md bg-red-600 hover:bg-red-700" onClick={() => setIsMenuOpen(false)}>Register</Link>
               </>
             ) : (
-              <button onClick={handleLogout} className="w-full text-left px-3 py-2 rounded-md bg-red-600 hover:bg-red-700">
+              <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 rounded-md bg-red-600 hover:bg-red-700">
                 Logout
               </button>
             )}

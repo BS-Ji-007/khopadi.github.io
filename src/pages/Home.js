@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { tmdb, smartSearch, quotes } from '../utils/multiApi';
 import MovieCard from '../components/MovieCard';
 
 const Home = () => {
+  const [searchParams] = useSearchParams();
+  const urlSearch = searchParams.get('search');
+  
   const [trending, setTrending] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(urlSearch || '');
   const [quote, setQuote] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
@@ -13,6 +17,13 @@ const Home = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (urlSearch) {
+      setSearchQuery(urlSearch);
+      performSearch(urlSearch);
+    }
+  }, [urlSearch]);
 
   const loadData = async () => {
     setLoading(true);
@@ -25,20 +36,24 @@ const Home = () => {
     setLoading(false);
   };
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) {
+  const performSearch = async (query) => {
+    if (!query.trim()) {
       setSearchResults([]);
       return;
     }
     setSearching(true);
-    const result = await smartSearch(searchQuery);
+    const result = await smartSearch(query);
     setSearchResults(result.data || []);
     setSearching(false);
   };
 
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    performSearch(searchQuery);
+  };
+
   const displayMovies = searchResults.length > 0 ? searchResults : trending;
-  const title = searchResults.length > 0 ? 'Search Results' : 'Trending This Week 🔥';
+  const title = searchResults.length > 0 ? `Search Results for "${searchQuery}"` : '🔥 Trending This Week';
 
   return (
     <div className="min-h-screen pt-20 pb-10">
@@ -89,6 +104,7 @@ const Home = () => {
               onClick={() => {
                 setSearchResults([]);
                 setSearchQuery('');
+                window.history.pushState({}, '', '/');
               }}
               className="text-red-500 hover:text-red-400"
             >
