@@ -1,174 +1,92 @@
-# 🎬 Khopadi Movies
+# 🎬 Khopadi Entertainment Hub
 
-**A modern, full-stack movie streaming website built with React and Node.js**
+**Complete Movies, TV Shows & Anime Streaming Platform**
 
-🌐 **Live Site:** https://bs-ji-007.github.io/khopadi.github.io/
-
----
-
-## ✨ Features
-
-### Frontend
-- 🎥 Browse trending movies, TV shows, and anime
-- 🔍 Real-time search functionality
-- 📱 Fully responsive design
-- 🌙 Dark mode with beautiful UI
-- ⭐ Movie ratings and details
-- 📄 Pagination for all categories
-- 🎨 Smooth animations and transitions
-
-### Backend
-- 🔐 User authentication (Login/Register)
-- 📧 OTP verification via email
-- 🔒 JWT-based security
-- 💾 SQLite database
-- 🚀 RESTful API
+🌐 **Live:** https://bs-ji-007.github.io/khopadi.github.io/
 
 ---
 
-## 🚀 Quick Start
+## ✨ What's Inside
 
-### Prerequisites
-- Node.js (v14+)
-- npm or yarn
-- TMDB API key (free)
+### 🎥 **Movies**
+- Trending & popular movies
+- Upcoming releases
+- Complete movie details
+- High-quality posters
 
-### Installation
+### 📺 **TV Shows**
+- Popular TV series
+- Season & episode info
+- Cast details
 
-#### 1. Clone Repository
+### ⭐ **Anime**
+- Watch anime with streaming
+- Multiple servers (SUB & DUB)
+- Episode selection
+- Skip intro/outro
+- HLS video player
+
+### 🔍 **Smart Search**
+- Search across movies, TV shows & anime
+- Real-time suggestions
+- Multiple API sources
+
+### 🎨 **UI Features**
+- Dark mode
+- Responsive design
+- Smooth animations
+- Professional video player
+- Mobile-friendly
+
+---
+
+## 🚀 Tech Stack
+
+- **Frontend:** React 18, Tailwind CSS
+- **Video Player:** HLS.js
+- **APIs:** TMDB, HiAnime, OMDb, TVMaze
+- **Deployment:** GitHub Pages
+
+---
+
+## 📦 Installation
+
 ```bash
+# Clone repo
 git clone https://github.com/BS-Ji-007/khopadi.github.io.git
 cd khopadi.github.io
-```
 
-#### 2. Setup Frontend
-```bash
+# Install
 npm install
-```
 
-#### 3. Get TMDB API Key
-1. Visit: https://www.themoviedb.org/signup
-2. Create account and get API key
-3. Open `src/utils/api.js`
-4. Replace `YOUR_TMDB_API_KEY` with your actual key
-
-#### 4. Run Development Server
-```bash
+# Run
 npm start
-```
 
-Visit: http://localhost:3000
-
-#### 5. Deploy
-```bash
+# Deploy
 npm run deploy
 ```
 
 ---
 
-## 🔧 Backend Setup (Optional)
+## 🎯 Features
 
-```bash
-cd backend
-npm install
-
-# Create .env file
-cp .env.example .env
-
-# Edit .env with your credentials
-npm run dev
-```
-
-**Backend URL:** https://khopadi-github-io.onrender.com
-
----
-
-## 📁 Project Structure
-
-```
-khopadi.github.io/
-├── public/              # Static files
-├── src/
-│   ├── components/      # React components
-│   │   ├── Navbar.js
-│   │   └── MovieCard.js
-│   ├── pages/          # Page components
-│   │   ├── Home.js
-│   │   ├── Movies.js
-│   │   ├── TVShows.js
-│   │   ├── Anime.js
-│   │   └── Upcoming.js
-│   ├── utils/          # Utilities
-│   │   └── api.js      # API functions
-│   ├── App.js          # Main app
-│   └── index.js        # Entry point
-├── backend/            # Node.js backend
-│   ├── server.js
-│   └── routes/
-└── package.json
-```
-
----
-
-## 🎯 Tech Stack
-
-### Frontend
-- React 18
-- React Router DOM
-- Axios
-- Tailwind CSS
-- TMDB API
-
-### Backend
-- Node.js
-- Express.js
-- Sequelize (SQLite)
-- JWT
-- Nodemailer
-
-### Deployment
-- Frontend: GitHub Pages
-- Backend: Render.com
-
----
-
-## 📸 Screenshots
-
-- **Homepage:** Trending movies with search
-- **Movies:** Grid of popular movies
-- **TV Shows:** Popular TV series
-- **Anime:** Top anime shows
-- **Upcoming:** Coming soon releases
-
----
-
-## 🔑 API Setup
-
-See [API_SETUP.md](./API_SETUP.md) for detailed instructions.
-
----
-
-## 📝 License
-
-MIT License - Feel free to use for your projects!
+✅ Movies database with details  
+✅ TV Shows with cast info  
+✅ Anime streaming with video player  
+✅ Multiple servers for reliability  
+✅ SUB & DUB audio options  
+✅ Search across all content  
+✅ Mobile responsive  
+✅ Fast & smooth performance  
 
 ---
 
 ## 👨‍💻 Developer
 
 **BS-Ji-007**
-
 - GitHub: [@BS-Ji-007](https://github.com/BS-Ji-007)
 - Email: bsji007007@gmail.com
 
 ---
 
-## 🙏 Acknowledgments
-
-- [TMDB API](https://www.themoviedb.org/documentation/api) for movie data
-- [OMDb API](http://www.omdbapi.com/) for additional data
-- React community for amazing tools
-
----
-
-**Made with ❤️ by BS-Ji-007**
+**Made with ❤️ for entertainment lovers!**
