@@ -1,140 +1,181 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { register, verifyRegister } from '../utils/auth';
+import { useNavigate, Link } from 'react-router-dom';
 
 const Register = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpInput, setOtpInput] = useState('');
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+    confirmPassword: ''
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const onChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-
-  const handleSendOtp = async (e) => {
-    e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      return setError('Passwords do not match');
-    }
-    if (formData.password.length < 6) {
-      return setError('Password must be at least 6 characters');
-    }
-    setLoading(true);
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
     setError('');
-    try {
-      await register(formData.name, formData.email, formData.password);
-      setOtpSent(true);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send OTP');
-    } finally {
-      setLoading(false);
-    }
   };
 
-  const handleVerifyAndRegister = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Validation
+    if (!formData.username || !formData.password || !formData.confirmPassword) {
+      setError('Please fill all fields');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.username.length < 3) {
+      setError('Username must be at least 3 characters');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
     try {
-      await verifyRegister(formData.email, otpInput);
+      // Get existing users from localStorage
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      
+      // Check if username already exists
+      const existingUser = users.find(u => u.username === formData.username);
+      if (existingUser) {
+        setError('Username already exists');
+        setLoading(false);
+        return;
+      }
+
+      // Create new user
+      const newUser = {
+        username: formData.username,
+        password: formData.password,
+        createdAt: new Date().toISOString()
+      };
+
+      // Save to localStorage
+      users.push(newUser);
+      localStorage.setItem('users', JSON.stringify(users));
+
+      // Auto login
+      const loginData = {
+        username: newUser.username,
+        loginTime: new Date().toISOString()
+      };
+      localStorage.setItem('currentUser', JSON.stringify(loginData));
+
+      // Redirect to home
       navigate('/');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to register');
+    } catch (error) {
+      setError('Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900">
-      <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md">
-        <h2 className="text-3xl mb-6 text-center text-white font-bold">Register</h2>
-        {error && (
-          <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded mb-4">
-            {error}
+    <div className="min-h-screen flex items-center justify-center pt-20 pb-10">
+      <div className="w-full max-w-md px-6">
+        <div className="bg-gray-800 rounded-2xl shadow-2xl p-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">✨ Create Account</h1>
+            <p className="text-gray-400">Join Khopadi Entertainment Hub!</p>
           </div>
-        )}
-        <form onSubmit={otpSent ? handleVerifyAndRegister : handleSendOtp}>
-          {!otpSent ? (
-            <>
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-500/10 border border-red-500 text-red-500 rounded-lg p-3 mb-6 text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Register Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Username */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-2">
+                Username
+              </label>
               <input
                 type="text"
-                name="name"
-                placeholder="Full Name"
-                value={formData.name}
-                onChange={onChange}
-                className="w-full p-3 mb-4 bg-gray-700 rounded text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                required
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500 transition-colors"
+                placeholder="Choose a username (min 3 characters)"
               />
-              <input
-                type="email"
-                name="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={onChange}
-                className="w-full p-3 mb-4 bg-gray-700 rounded text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                required
-              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-2">
+                Password
+              </label>
               <input
                 type="password"
                 name="password"
-                placeholder="Password (min 6 characters)"
                 value={formData.password}
-                onChange={onChange}
-                className="w-full p-3 mb-4 bg-gray-700 rounded text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                required
-                minLength={6}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500 transition-colors"
+                placeholder="Create a password (min 6 characters)"
               />
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-2">
+                Confirm Password
+              </label>
               <input
                 type="password"
                 name="confirmPassword"
-                placeholder="Confirm Password"
                 value={formData.confirmPassword}
-                onChange={onChange}
-                className="w-full p-3 mb-6 bg-gray-700 rounded text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                required
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500 transition-colors"
+                placeholder="Confirm your password"
               />
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-red-600 hover:bg-red-700 p-3 rounded font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {loading ? 'Loading...' : 'Send OTP'}
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="bg-green-500/10 border border-green-500 text-green-500 px-4 py-3 rounded mb-4 text-sm">
-                <p className="font-semibold">OTP sent to your email</p>
-                <p className="text-xs mt-1">Enter the 6-digit code to complete registration</p>
-              </div>
-              <input
-                type="text"
-                placeholder="Enter 6-digit OTP"
-                value={otpInput}
-                onChange={(e) => setOtpInput(e.target.value)}
-                maxLength={6}
-                className="w-full p-3 mb-4 bg-gray-700 rounded text-white text-center tracking-widest text-2xl focus:outline-none focus:ring-2 focus:ring-green-500"
-                required
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-green-600 hover:bg-green-700 p-3 rounded font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {loading ? 'Loading...' : 'Verify & Register'}
-              </button>
-            </>
-          )}
-        </form>
-        <div className="mt-6 text-center text-gray-400">
-          <p>
+            </div>
+
+            {/* Register Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Creating Account...' : 'Create Account'}
+            </button>
+          </form>
+
+          {/* Login Link */}
+          <p className="text-center text-gray-400 text-sm mt-6">
             Already have an account?{' '}
-            <Link to="/login" className="text-red-500 hover:text-red-400">
-              Login here
+            <Link to="/login" className="text-red-500 hover:text-red-400 font-semibold">
+              Login
             </Link>
           </p>
+
+          {/* Note */}
+          <div className="mt-6 p-4 bg-gray-700/50 rounded-lg">
+            <p className="text-xs text-gray-400 text-center">
+              🔒 Your account is stored locally on your device
+            </p>
+          </div>
         </div>
       </div>
     </div>
