@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../App';
 
@@ -7,11 +7,26 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const navigate = useNavigate();
 
+  // Check login status
+  useEffect(() => {
+    const checkUser = () => {
+      const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+      setCurrentUser(user);
+    };
+    
+    checkUser();
+    
+    // Listen for storage changes
+    window.addEventListener('storage', checkUser);
+    return () => window.removeEventListener('storage', checkUser);
+  }, []);
+
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('currentUser');
+    setCurrentUser(null);
     navigate('/login');
   };
 
@@ -34,7 +49,7 @@ const Navbar = () => {
               <span className="text-2xl font-bold text-white">K</span>
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
-              KHOPADI MOVIES
+              KHOPADI
             </span>
           </Link>
 
@@ -77,8 +92,26 @@ const Navbar = () => {
               )}
             </button>
 
-            {/* Auth Buttons */}
-            {!isAuthenticated ? (
+            {/* Auth Buttons or Profile */}
+            {currentUser ? (
+              <div className="hidden md:flex items-center space-x-3">
+                <Link
+                  to="/profile"
+                  className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors"
+                >
+                  <span className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-sm font-bold">
+                    {currentUser.username.charAt(0).toUpperCase()}
+                  </span>
+                  <span className="font-semibold">{currentUser.username}</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
               <div className="hidden md:flex items-center space-x-3">
                 <Link
                   to="/login"
@@ -92,15 +125,6 @@ const Navbar = () => {
                 >
                   Register
                 </Link>
-              </div>
-            ) : (
-              <div className="hidden md:flex items-center space-x-3">
-                <button
-                  onClick={handleLogout}
-                  className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
-                >
-                  Logout
-                </button>
               </div>
             )}
 
@@ -167,15 +191,20 @@ const Navbar = () => {
               />
             </form>
             
-            {!isAuthenticated ? (
+            {currentUser ? (
+              <>
+                <Link to="/profile" className="block px-3 py-2 rounded-md bg-gray-700 hover:bg-gray-600" onClick={() => setIsMenuOpen(false)}>
+                  👤 {currentUser.username}
+                </Link>
+                <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 rounded-md bg-red-600 hover:bg-red-700">
+                  Logout
+                </button>
+              </>
+            ) : (
               <>
                 <Link to="/login" className="block px-3 py-2 rounded-md bg-gray-700 hover:bg-gray-600" onClick={() => setIsMenuOpen(false)}>Login</Link>
                 <Link to="/register" className="block px-3 py-2 rounded-md bg-red-600 hover:bg-red-700" onClick={() => setIsMenuOpen(false)}>Register</Link>
               </>
-            ) : (
-              <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 rounded-md bg-red-600 hover:bg-red-700">
-                Logout
-              </button>
             )}
           </div>
         </div>
