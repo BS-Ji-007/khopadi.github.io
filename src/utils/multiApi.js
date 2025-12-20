@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { hianime } from './hianimeApi';
 
 // ======================
 // API CONFIGURATIONS
@@ -261,33 +262,48 @@ export const quotes = {
 };
 
 // ======================
-// SMART SEARCH (Multiple APIs)
+// SMART SEARCH (Multiple APIs + Anime)
 // ======================
 
 export const smartSearch = async (query) => {
   try {
-    // Try TMDB first
+    // Try TMDB first (movies + TV)
     const tmdbResults = await tmdb.search(query);
     if (tmdbResults.results && tmdbResults.results.length > 0) {
-      return { source: 'TMDB', data: tmdbResults.results };
+      return { source: 'TMDB', data: tmdbResults.results, type: 'mixed' };
+    }
+
+    // Try HiAnime for anime
+    const animeResults = await hianime.search(query, 1);
+    if (animeResults.animes && animeResults.animes.length > 0) {
+      return { 
+        source: 'HiAnime', 
+        data: animeResults.animes.map(anime => ({
+          ...anime,
+          media_type: 'anime',
+          poster_path: anime.poster,
+          name: anime.title
+        })), 
+        type: 'anime' 
+      };
     }
 
     // Fallback to OMDb
     const omdbResults = await omdb.search(query);
     if (omdbResults.length > 0) {
-      return { source: 'OMDb', data: omdbResults };
+      return { source: 'OMDb', data: omdbResults, type: 'movies' };
     }
 
     // Fallback to TVMaze for TV shows
     const tvmazeResults = await tvmaze.search(query);
     if (tvmazeResults.length > 0) {
-      return { source: 'TVMaze', data: tvmazeResults };
+      return { source: 'TVMaze', data: tvmazeResults, type: 'tv' };
     }
 
-    return { source: 'none', data: [] };
+    return { source: 'none', data: [], type: 'none' };
   } catch (error) {
     console.error('Smart search error:', error);
-    return { source: 'error', data: [] };
+    return { source: 'error', data: [], type: 'error' };
   }
 };
 
@@ -301,6 +317,7 @@ export default {
   omdb,
   imdb,
   quotes,
+  hianime,
   smartSearch,
   getImageUrl
 };
