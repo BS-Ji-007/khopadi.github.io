@@ -7,15 +7,30 @@ const MovieCard = ({ movie, type = 'movie' }) => {
   const releaseDate = movie.release_date || movie.first_air_date || '';
   const year = releaseDate ? new Date(releaseDate).getFullYear() : 'N/A';
   const rating = movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A';
-  const poster = movie.poster_path || movie.Poster;
+  const poster = movie.poster_path || movie.poster || movie.Poster;
   
   const imageUrl = poster && poster !== 'N/A' 
     ? (poster.startsWith('http') ? poster : getImageUrl(poster, 'w300'))
     : '/placeholder-movie.jpg';
 
+  // Determine route based on media type
+  const getRoute = () => {
+    if (movie.media_type === 'anime' || type === 'anime') {
+      return `/anime/watch/${movie.id || movie.imdbID}`;
+    }
+    return `/${type}/${movie.id || movie.imdbID}`;
+  };
+
+  // Get display badge
+  const getBadge = () => {
+    if (movie.media_type === 'anime' || type === 'anime') return '✨ ANIME';
+    if (type === 'tv' || movie.media_type === 'tv') return '📺 TV';
+    return '🎬 MOVIE';
+  };
+
   return (
     <Link
-      to={`/${type}/${movie.id || movie.imdbID}`}
+      to={getRoute()}
       className="group relative block overflow-hidden rounded-lg bg-gray-800 transition-transform duration-300 hover:scale-105 hover:shadow-2xl"
     >
       {/* Movie Poster */}
@@ -48,9 +63,14 @@ const MovieCard = ({ movie, type = 'movie' }) => {
         </div>
       </div>
 
+      {/* Type Badge */}
+      <div className="absolute right-2 top-2 rounded bg-red-600 px-2 py-1 text-xs font-bold text-white">
+        {getBadge()}
+      </div>
+
       {/* Rating Badge */}
       {rating !== 'N/A' && (
-        <div className="absolute right-2 top-2 rounded bg-black/70 px-2 py-1 text-xs font-bold text-white backdrop-blur-sm">
+        <div className="absolute left-2 top-2 rounded bg-black/70 px-2 py-1 text-xs font-bold text-white backdrop-blur-sm">
           ⭐ {rating}
         </div>
       )}
