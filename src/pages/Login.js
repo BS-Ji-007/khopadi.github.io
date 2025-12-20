@@ -1,91 +1,154 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { login, requestOtp } from '../utils/auth';
+import { useNavigate, Link } from 'react-router-dom';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [otpInput, setOtpInput] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
+  const [formData, setFormData] = useState({
+    username: '',
+    password: ''
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleRequestOtp = async (e) => {
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+    setError('');
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Validation
+    if (!formData.username || !formData.password) {
+      setError('Please enter both username and password');
+      setLoading(false);
+      return;
+    }
+
     try {
-      await requestOtp(email);
-      setOtpSent(true);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send OTP');
+      // Get users from localStorage
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      
+      // Find user
+      const user = users.find(
+        u => u.username === formData.username && u.password === formData.password
+      );
+
+      if (user) {
+        // Login successful
+        const loginData = {
+          username: user.username,
+          loginTime: new Date().toISOString()
+        };
+        localStorage.setItem('currentUser', JSON.stringify(loginData));
+        navigate('/');
+      } else {
+        setError('Invalid username or password');
+      }
+    } catch (error) {
+      setError('Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    try {
-      await login(email, otpInput);
-      navigate('/');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to login');
-    } finally {
-      setLoading(false);
-    }
+  const handleGuestLogin = () => {
+    // Guest login
+    const guestData = {
+      username: 'Guest',
+      loginTime: new Date().toISOString()
+    };
+    localStorage.setItem('currentUser', JSON.stringify(guestData));
+    navigate('/');
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900">
-      <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md">
-        <h2 className="text-3xl mb-6 text-center text-white font-bold">Login</h2>
-        {error && (
-          <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded mb-4">
-            {error}
+    <div className="min-h-screen flex items-center justify-center pt-20 pb-10">
+      <div className="w-full max-w-md px-6">
+        <div className="bg-gray-800 rounded-2xl shadow-2xl p-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">🎬 Login</h1>
+            <p className="text-gray-400">Welcome back to Khopadi!</p>
           </div>
-        )}
-        <form onSubmit={otpSent ? handleLogin : handleRequestOtp}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-3 mb-4 bg-gray-700 rounded text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-            required
-            disabled={otpSent}
-          />
-          {otpSent && (
-            <>
-              <div className="bg-green-500/10 border border-green-500 text-green-500 px-4 py-3 rounded mb-4 text-sm">
-                OTP sent to your email. Please check and enter below.
-              </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-500/10 border border-red-500 text-red-500 rounded-lg p-3 mb-6 text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Username */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-2">
+                Username
+              </label>
               <input
                 type="text"
-                placeholder="Enter 6-digit OTP"
-                value={otpInput}
-                onChange={(e) => setOtpInput(e.target.value)}
-                maxLength={6}
-                className="w-full p-3 mb-4 bg-gray-700 rounded text-white text-center tracking-widest text-2xl focus:outline-none focus:ring-2 focus:ring-red-500"
-                required
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500 transition-colors"
+                placeholder="Enter your username"
               />
-            </>
-          )}
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500 transition-colors"
+                placeholder="Enter your password"
+              />
+            </div>
+
+            {/* Login Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Logging in...' : 'Login'}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-600"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-gray-800 text-gray-400">OR</span>
+            </div>
+          </div>
+
+          {/* Guest Login */}
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-red-600 hover:bg-red-700 p-3 rounded font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            onClick={handleGuestLogin}
+            className="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 rounded-lg transition-colors mb-4"
           >
-            {loading ? 'Loading...' : otpSent ? 'Verify & Login' : 'Send OTP'}
+            👤 Continue as Guest
           </button>
-        </form>
-        <div className="mt-6 text-center text-gray-400">
-          <p>
+
+          {/* Register Link */}
+          <p className="text-center text-gray-400 text-sm">
             Don't have an account?{' '}
-            <Link to="/register" className="text-red-500 hover:text-red-400">
-              Register here
+            <Link to="/register" className="text-red-500 hover:text-red-400 font-semibold">
+              Create Account
             </Link>
           </p>
         </div>
