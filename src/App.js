@@ -1,23 +1,26 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
 import Movies from './pages/Movies';
 import TVShows from './pages/TVShows';
 import Anime from './pages/Anime';
 import Upcoming from './pages/Upcoming';
 import MovieDetails from './pages/MovieDetails';
+import AnimePlayer from './pages/AnimePlayer';
+import Login from './pages/Login';
+import Register from './pages/Register';
 import Profile from './pages/Profile';
+import QuotesPage from './pages/QuotesPage';
+import './index.css';
 
-// Theme Context for dark/light mode
+// Theme Context
 const ThemeContext = createContext();
 
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    throw new Error('useTheme must be used within ThemeProvider');
   }
   return context;
 };
@@ -25,37 +28,51 @@ export const useTheme = () => {
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
 
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      setIsDarkMode(savedTheme === 'dark');
+    }
+  }, []);
+
   const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
   };
 
-  const theme = {
-    isDarkMode,
-    toggleTheme,
-    colors: {
-      bg: isDarkMode ? 'bg-gray-900' : 'bg-white',
-      text: isDarkMode ? 'text-white' : 'text-gray-900',
-      card: isDarkMode ? 'bg-gray-800' : 'bg-gray-100',
-      input: isDarkMode ? 'bg-gray-700' : 'bg-gray-50',
-      border: isDarkMode ? 'border-gray-600' : 'border-gray-300'
-    }
-  };
+  const colors = isDarkMode
+    ? {
+        bg: 'bg-gray-900',
+        text: 'text-white',
+        cardBg: 'bg-gray-800',
+        border: 'border-gray-700'
+      }
+    : {
+        bg: 'bg-white',
+        text: 'text-gray-900',
+        cardBg: 'bg-gray-100',
+        border: 'border-gray-300'
+      };
 
   return (
-    <ThemeContext.Provider value={theme}>
-      <Router>
-        <div className={`${theme.colors.bg} ${theme.colors.text} min-h-screen transition-colors duration-300`}>
+    <ThemeContext.Provider value={{ isDarkMode, toggleTheme, colors }}>
+      <Router basename="/khopadi.github.io">
+        <div className={`min-h-screen ${colors.bg} ${colors.text}`}>
           <Navbar />
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
             <Route path="/movies" element={<Movies />} />
             <Route path="/tv-shows" element={<TVShows />} />
             <Route path="/anime" element={<Anime />} />
+            <Route path="/anime/watch/:id" element={<AnimePlayer />} />
             <Route path="/upcoming" element={<Upcoming />} />
             <Route path="/movie/:id" element={<MovieDetails />} />
+            <Route path="/tv/:id" element={<MovieDetails />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/quotes" element={<QuotesPage />} />
           </Routes>
         </div>
       </Router>
