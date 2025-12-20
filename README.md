@@ -49,25 +49,6 @@
 
 ---
 
-## 📦 Installation
-
-```bash
-# Clone repo
-git clone https://github.com/BS-Ji-007/khopadi.github.io.git
-cd khopadi.github.io
-
-# Install
-npm install
-
-# Run
-npm start
-
-# Deploy
-npm run deploy
-```
-
----
-
 ## 🎯 Features
 
 ✅ Movies database with details  
@@ -85,7 +66,6 @@ npm run deploy
 
 **BS-Ji-007**
 - GitHub: [@BS-Ji-007](https://github.com/BS-Ji-007)
-- Email: bsji007007@gmail.com
 
 ---
 
