@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/khopadi.github.io/static/css/main.18ccf18a.css",
-    "main.js": "/khopadi.github.io/static/js/main.d654a414.js",
+    "main.css": "/khopadi.github.io/static/css/main.b8bae97e.css",
+    "main.js": "/khopadi.github.io/static/js/main.d4e8584a.js",
     "static/js/453.293b5985.chunk.js": "/khopadi.github.io/static/js/453.293b5985.chunk.js",
     "index.html": "/khopadi.github.io/index.html",
-    "main.18ccf18a.css.map": "/khopadi.github.io/static/css/main.18ccf18a.css.map",
-    "main.d654a414.js.map": "/khopadi.github.io/static/js/main.d654a414.js.map",
+    "main.b8bae97e.css.map": "/khopadi.github.io/static/css/main.b8bae97e.css.map",
+    "main.d4e8584a.js.map": "/khopadi.github.io/static/js/main.d4e8584a.js.map",
     "453.293b5985.chunk.js.map": "/khopadi.github.io/static/js/453.293b5985.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.18ccf18a.css",
-    "static/js/main.d654a414.js"
+    "static/css/main.b8bae97e.css",
+    "static/js/main.d4e8584a.js"
   ]
 }
