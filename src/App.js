@@ -7,6 +7,7 @@ import TVShows from './pages/TVShows';
 import Anime from './pages/Anime';
 import Upcoming from './pages/Upcoming';
 import MovieDetails from './pages/MovieDetails';
+import MoviePlayer from './pages/MoviePlayer';
 import AnimePlayer from './pages/AnimePlayer';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -69,6 +70,8 @@ function App() {
             <Route path="/upcoming" element={<Upcoming />} />
             <Route path="/movie/:id" element={<MovieDetails />} />
             <Route path="/tv/:id" element={<MovieDetails />} />
+            <Route path="/watch/movie/:id" element={<MoviePlayer />} />
+            <Route path="/watch/tv/:id" element={<MoviePlayer />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/profile" element={<Profile />} />
