@@ -13,37 +13,37 @@ const MoviePlayer = () => {
   const servers = [
     {
       name: 'VidSrc',
-      url: (id, type) => `https://vidsrc.xyz/embed/${type}/${id}`
+      url: (movieId, contentType) => `https://vidsrc.xyz/embed/${contentType}/${movieId}`
     },
     {
       name: 'VidSrc Pro',
-      url: (id, type) => `https://vidsrc.pro/embed/${type}/${id}`
+      url: (movieId, contentType) => `https://vidsrc.pro/embed/${contentType}/${movieId}`
     },
     {
       name: '2Embed',
-      url: (id, type) => `https://www.2embed.cc/embed/${id}`
+      url: (movieId) => `https://www.2embed.cc/embed/${movieId}`
     },
     {
       name: 'Embed.su',
-      url: (id, type) => `https://embed.su/embed/${type}/${id}`
+      url: (movieId, contentType) => `https://embed.su/embed/${contentType}/${movieId}`
     }
   ];
 
   useEffect(() => {
+    const fetchDetails = async () => {
+      try {
+        setLoading(true);
+        const data = await tmdb.details(id, type || 'movie');
+        setMovie(data);
+      } catch (error) {
+        console.error('Error fetching details:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchDetails();
   }, [id, type]);
-
-  const fetchDetails = async () => {
-    try {
-      setLoading(true);
-      const data = await tmdb.details(id, type || 'movie');
-      setMovie(data);
-    } catch (error) {
-      console.error('Error fetching details:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -94,7 +94,7 @@ const MoviePlayer = () => {
                 src={getImageUrl(movie.poster_path, 'w342')}
                 alt={movie.title || movie.name}
                 className="w-48 h-auto rounded-lg shadow-lg"
-                onError={(e) => e.target.src = '/placeholder-movie.jpg'}
+                onError={(e) => { e.target.src = '/placeholder-movie.jpg'; }}
               />
             </div>
 
