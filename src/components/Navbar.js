@@ -8,6 +8,7 @@ const Navbar = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const navigate = useNavigate();
 
   // Check login status
@@ -27,6 +28,7 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
     setCurrentUser(null);
+    setShowProfileMenu(false);
     navigate('/login');
   };
 
@@ -92,41 +94,84 @@ const Navbar = () => {
               )}
             </button>
 
-            {/* Auth Buttons or Profile */}
-            {currentUser ? (
-              <div className="hidden md:flex items-center space-x-3">
-                <Link
-                  to="/profile"
-                  className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors"
-                >
-                  <span className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-sm font-bold">
+            {/* Profile Icon - Desktop */}
+            <div className="hidden md:block relative">
+              <button
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center transition-colors"
+              >
+                {currentUser ? (
+                  <span className="text-lg font-bold text-white">
                     {currentUser.username.charAt(0).toUpperCase()}
                   </span>
-                  <span className="font-semibold">{currentUser.username}</span>
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
-                >
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <div className="hidden md:flex items-center space-x-3">
-                <Link
-                  to="/login"
-                  className="px-4 py-2 rounded-lg border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors"
-                >
-                  Register
-                </Link>
-              </div>
-            )}
+                ) : (
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </button>
+
+              {/* Profile Dropdown */}
+              {showProfileMenu && (
+                <div className="absolute right-0 mt-2 w-56 bg-gray-800 rounded-lg shadow-xl py-2 border border-gray-700">
+                  {currentUser ? (
+                    <>
+                      <div className="px-4 py-3 border-b border-gray-700">
+                        <p className="text-sm font-semibold text-white">{currentUser.username}</p>
+                        <p className="text-xs text-gray-400">
+                          {currentUser.username === 'Guest' ? 'Guest User' : 'Registered User'}
+                        </p>
+                      </div>
+                      <Link
+                        to="/profile"
+                        onClick={() => setShowProfileMenu(false)}
+                        className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors"
+                      >
+                        👤 My Profile
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 transition-colors"
+                      >
+                        🚪 Logout
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        to="/login"
+                        onClick={() => setShowProfileMenu(false)}
+                        className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors"
+                      >
+                        🔑 Login
+                      </Link>
+                      <Link
+                        to="/register"
+                        onClick={() => setShowProfileMenu(false)}
+                        className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors"
+                      >
+                        ✨ Create Account
+                      </Link>
+                      <div className="border-t border-gray-700 my-2"></div>
+                      <button
+                        onClick={() => {
+                          const guestData = {
+                            username: 'Guest',
+                            loginTime: new Date().toISOString()
+                          };
+                          localStorage.setItem('currentUser', JSON.stringify(guestData));
+                          setCurrentUser(guestData);
+                          setShowProfileMenu(false);
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors"
+                      >
+                        👤 Continue as Guest
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Mobile Menu Button */}
             <button
@@ -191,21 +236,41 @@ const Navbar = () => {
               />
             </form>
             
-            {currentUser ? (
-              <>
-                <Link to="/profile" className="block px-3 py-2 rounded-md bg-gray-700 hover:bg-gray-600" onClick={() => setIsMenuOpen(false)}>
-                  👤 {currentUser.username}
-                </Link>
-                <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 rounded-md bg-red-600 hover:bg-red-700">
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="block px-3 py-2 rounded-md bg-gray-700 hover:bg-gray-600" onClick={() => setIsMenuOpen(false)}>Login</Link>
-                <Link to="/register" className="block px-3 py-2 rounded-md bg-red-600 hover:bg-red-700" onClick={() => setIsMenuOpen(false)}>Register</Link>
-              </>
-            )}
+            {/* Mobile Profile Menu */}
+            <div className="border-t border-gray-700 mt-2 pt-2">
+              {currentUser ? (
+                <>
+                  <div className="px-3 py-2 text-sm">
+                    <p className="font-semibold text-white">{currentUser.username}</p>
+                    <p className="text-xs text-gray-400">
+                      {currentUser.username === 'Guest' ? 'Guest User' : 'Registered User'}
+                    </p>
+                  </div>
+                  <Link to="/profile" className="block px-3 py-2 rounded-md hover:bg-gray-700" onClick={() => setIsMenuOpen(false)}>
+                    👤 Profile
+                  </Link>
+                  <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="w-full text-left px-3 py-2 rounded-md text-red-400 hover:bg-gray-700">
+                    🚪 Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link to="/login" className="block px-3 py-2 rounded-md hover:bg-gray-700" onClick={() => setIsMenuOpen(false)}>🔑 Login</Link>
+                  <Link to="/register" className="block px-3 py-2 rounded-md hover:bg-gray-700" onClick={() => setIsMenuOpen(false)}>✨ Register</Link>
+                  <button
+                    onClick={() => {
+                      const guestData = { username: 'Guest', loginTime: new Date().toISOString() };
+                      localStorage.setItem('currentUser', JSON.stringify(guestData));
+                      setCurrentUser(guestData);
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-700"
+                  >
+                    👤 Guest
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
