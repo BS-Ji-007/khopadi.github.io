@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { hianime } from './hianimeApi';
+import { shashankAnime } from './shashankAnimeApi';
 
 // ======================
 // API CONFIGURATIONS
@@ -262,7 +263,68 @@ export const quotes = {
 };
 
 // ======================
-// SMART SEARCH (Multiple APIs + Anime)
+// DUAL ANIME API SYSTEM
+// ======================
+
+export const animeApi = {
+  /**
+   * Smart anime search - tries both APIs
+   * @param {string} query - Search query
+   * @returns {Promise<Object>} - Combined results from both APIs
+   */
+  search: async (query) => {
+    try {
+      const [hianimeResults, shashankResults] = await Promise.all([
+        hianime.search(query, 1).catch(() => ({ animes: [] })),
+        shashankAnime.search(query).catch(() => [])
+      ]);
+
+      return {
+        hianime: hianimeResults.animes || [],
+        shashank: shashankResults,
+        combined: [
+          ...hianimeResults.animes.map(a => ({ ...a, source: 'hianime' })),
+          ...shashankResults.map(a => ({ ...a, source: 'shashank' }))
+        ]
+      };
+    } catch (error) {
+      console.error('Anime search error:', error);
+      return { hianime: [], shashank: [], combined: [] };
+    }
+  },
+
+  /**
+   * Get anime from preferred source
+   * @param {string} id - Anime ID
+   * @param {string} source - 'hianime' or 'shashank'
+   * @returns {Promise<Object>} - Anime details
+   */
+  getAnime: async (id, source = 'hianime') => {
+    try {
+      if (source === 'shashank') {
+        const [episodes, epList] = await Promise.all([
+          shashankAnime.getEpisodes(id, 'sub'),
+          shashankAnime.getEpisodes(id, 'dub')
+        ]);
+        return {
+          id,
+          subEpisodes: episodes.episodes,
+          dubEpisodes: epList.episodes,
+          source: 'shashank'
+        };
+      } else {
+        const data = await hianime.info(id);
+        return { ...data, source: 'hianime' };
+      }
+    } catch (error) {
+      console.error('Get anime error:', error);
+      return null;
+    }
+  }
+};
+
+// ======================
+// SMART SEARCH (Multiple APIs + Dual Anime)
 // ======================
 
 export const smartSearch = async (query) => {
@@ -273,16 +335,16 @@ export const smartSearch = async (query) => {
       return { source: 'TMDB', data: tmdbResults.results, type: 'mixed' };
     }
 
-    // Try HiAnime for anime
-    const animeResults = await hianime.search(query, 1);
-    if (animeResults.animes && animeResults.animes.length > 0) {
+    // Try both anime APIs
+    const animeResults = await animeApi.search(query);
+    if (animeResults.combined.length > 0) {
       return { 
-        source: 'HiAnime', 
-        data: animeResults.animes.map(anime => ({
+        source: 'Anime (Dual)', 
+        data: animeResults.combined.map(anime => ({
           ...anime,
           media_type: 'anime',
-          poster_path: anime.poster,
-          name: anime.title
+          poster_path: anime.poster || anime.image,
+          name: anime.title || anime.name
         })), 
         type: 'anime' 
       };
@@ -318,6 +380,8 @@ export default {
   imdb,
   quotes,
   hianime,
+  shashankAnime,
+  animeApi,
   smartSearch,
   getImageUrl
 };
