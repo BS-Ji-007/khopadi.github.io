@@ -1,0 +1,456 @@
+/* ============================================
+   ANIME PLAYER STYLES - COMPLETE DESIGN
+   ============================================ */
+
+.anime-player-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+  background: #000;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.anime-player-video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  cursor: pointer;
+}
+
+/* Loading Overlay */
+.player-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  z-index: 10;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.player-loading p {
+  font-size: 16px;
+  margin: 0;
+}
+
+/* Error Message */
+.player-error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 0, 0, 0.9);
+  color: #fff;
+  padding: 20px 30px;
+  border-radius: 8px;
+  text-align: center;
+  z-index: 11;
+}
+
+.player-error p {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+}
+
+.player-error button {
+  background: #fff;
+  color: #ff0000;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.player-error button:hover {
+  background: #f0f0f0;
+}
+
+/* Skip Buttons */
+.skip-button {
+  position: absolute;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border: 2px solid #fff;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s;
+  z-index: 5;
+  animation: fadeInSlide 0.3s ease-out;
+}
+
+.skip-intro {
+  bottom: 120px;
+}
+
+.skip-outro {
+  bottom: 120px;
+}
+
+.skip-button:hover {
+  background: #fff;
+  color: #000;
+  transform: scale(1.05);
+}
+
+@keyframes fadeInSlide {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Player Controls */
+.player-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+  padding: 60px 20px 20px;
+  transition: opacity 0.3s;
+  z-index: 5;
+}
+
+/* Top Bar */
+.controls-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.episode-info h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Audio Type Selector */
+.audio-selector {
+  display: flex;
+  gap: 5px;
+}
+
+.audio-selector button {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.audio-selector button.active {
+  background: #fff;
+  color: #000;
+}
+
+.audio-selector button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Progress Bar */
+.progress-container {
+  margin-bottom: 15px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  cursor: pointer;
+  outline: none;
+}
+
+.progress-bar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.progress-bar::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.progress-bar:hover::-webkit-slider-thumb {
+  transform: scale(1.2);
+}
+
+.time-display {
+  display: flex;
+  justify-content: space-between;
+  color: #fff;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+/* Bottom Controls */
+.controls-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+
+.controls-left,
+.controls-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.controls-bottom button {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s;
+  min-width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.controls-bottom button:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
+}
+
+/* Volume Control */
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.volume-slider {
+  width: 80px;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  cursor: pointer;
+  outline: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+.time-text {
+  color: #fff;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* Selectors */
+.speed-selector,
+.quality-selector,
+.server-selector {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.speed-selector:hover,
+.quality-selector:hover,
+.server-selector:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.speed-selector option,
+.quality-selector option,
+.server-selector option {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+/* Fullscreen Styles */
+.anime-player-container:fullscreen {
+  width: 100vw;
+  height: 100vh;
+}
+
+.anime-player-container:fullscreen .anime-player-video {
+  width: 100%;
+  height: 100%;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .anime-player-container {
+    min-height: 300px;
+  }
+
+  .controls-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .controls-bottom {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .controls-left,
+  .controls-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .volume-slider {
+    width: 60px;
+  }
+
+  .time-text {
+    font-size: 12px;
+  }
+
+  .skip-button {
+    right: 10px;
+    bottom: 100px;
+    padding: 8px 15px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .episode-info h3 {
+    font-size: 14px;
+  }
+
+  .controls-bottom button {
+    padding: 6px 10px;
+    font-size: 14px;
+    min-width: 35px;
+  }
+
+  .audio-selector button {
+    padding: 5px 12px;
+    font-size: 12px;
+  }
+
+  .speed-selector,
+  .quality-selector,
+  .server-selector {
+    font-size: 12px;
+    padding: 5px 8px;
+  }
+
+  .volume-control {
+    display: none; /* Hide on very small screens */
+  }
+}
+
+/* Loading Animation Enhancement */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.player-loading p {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Subtitle Styles */
+video::cue {
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  font-size: 18px;
+  font-family: Arial, sans-serif;
+  text-shadow: 0 0 4px #000;
+}
+
+/* Custom Scrollbar for Selects */
+select::-webkit-scrollbar {
+  width: 8px;
+}
+
+select::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+select::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+select::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
