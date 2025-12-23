@@ -1,25 +1,48 @@
 import axios from 'axios';
 
 // ============================================
-// CORS & M3U8 PROXY UTILITIES
+// ALL CORS & M3U8 PROXY UTILITIES
 // ============================================
 
 /**
- * CORS Proxy URLs
- * Use these to bypass CORS restrictions
+ * CORS Proxy URLs - Multiple sources for reliability
  */
 export const CORS_PROXIES = [
+  // Public CORS Proxies
   'https://corsproxy.io/?',
-  'https://cors-anywhere.herokuapp.com/',
   'https://api.allorigins.win/raw?url=',
   'https://cors.eu.org/',
-  'https://thingproxy.freeboard.io/fetch/'
+  'https://thingproxy.freeboard.io/fetch/',
+  
+  // GitHub CORS Anywhere
+  'https://cors-anywhere.herokuapp.com/',
+  
+  // Custom Workers (ItsGloKeR)
+  'https://cors-worker.vercel.app/?url=',
+  
+  // Alternative proxies
+  'https://proxy.cors.sh/',
+  'https://yacdn.org/proxy/'
 ];
 
 /**
- * M3U8 Proxy for HLS streaming
+ * M3U8 Proxy for HLS streaming - Multiple sources
  */
-export const M3U8_PROXY = 'https://m3u8-proxy.vercel.app/m3u8-proxy';
+export const M3U8_PROXIES = [
+  // Primary (ItsGloKeR)
+  'https://m3u8-proxy.vercel.app/m3u8-proxy',
+  
+  // Alternative (AlperenBayam)
+  'https://m3u8-proxy-alperen.vercel.app/proxy',
+  
+  // HiAnime built-in proxy
+  'https://hianime-api2.vercel.app/api/v1/proxy'
+];
+
+/**
+ * Get default M3U8 proxy
+ */
+export const M3U8_PROXY = M3U8_PROXIES[0];
 
 /**
  * Proxy a URL through CORS proxy
@@ -28,7 +51,7 @@ export const proxifyUrl = (url, proxyIndex = 0) => {
   if (!url) return '';
   
   // If already proxied, return as is
-  if (url.includes('corsproxy') || url.includes('cors-anywhere')) {
+  if (url.includes('corsproxy') || url.includes('cors-anywhere') || url.includes('proxy')) {
     return url;
   }
   
@@ -37,12 +60,24 @@ export const proxifyUrl = (url, proxyIndex = 0) => {
 };
 
 /**
- * Proxy M3U8 playlist
+ * Proxy M3U8 playlist with fallback
  */
-export const proxifyM3U8 = (url, origin = 'https://megacloud.tv') => {
+export const proxifyM3U8 = (url, origin = 'https://megacloud.tv', proxyIndex = 0) => {
   if (!url) return '';
   
-  return `${M3U8_PROXY}?url=${encodeURIComponent(url)}&origin=${encodeURIComponent(origin)}`;
+  // If already proxied, return as is
+  if (url.includes('m3u8-proxy') || url.includes('/proxy')) {
+    return url;
+  }
+  
+  const proxy = M3U8_PROXIES[proxyIndex] || M3U8_PROXIES[0];
+  
+  // Different proxy formats
+  if (proxy.includes('hianime-api2')) {
+    return `${proxy}?url=${encodeURIComponent(url)}&referer=${encodeURIComponent(origin)}`;
+  } else {
+    return `${proxy}?url=${encodeURIComponent(url)}&origin=${encodeURIComponent(origin)}`;
+  }
 };
 
 /**
@@ -63,6 +98,26 @@ export const fetchWithCors = async (url, maxRetries = 3) => {
       console.log(`CORS proxy ${i + 1} failed, trying next...`);
       if (i === maxRetries - 1) {
         throw error;
+      }
+    }
+  }
+};
+
+/**
+ * Try multiple M3U8 proxies until one works
+ */
+export const fetchM3U8WithFallback = async (url, origin = 'https://megacloud.tv') => {
+  for (let i = 0; i < M3U8_PROXIES.length; i++) {
+    try {
+      const proxiedUrl = proxifyM3U8(url, origin, i);
+      const response = await axios.get(proxiedUrl, {
+        timeout: 10000
+      });
+      return { success: true, data: response.data, proxyIndex: i };
+    } catch (error) {
+      console.log(`M3U8 proxy ${i + 1} failed, trying next...`);
+      if (i === M3U8_PROXIES.length - 1) {
+        return { success: false, data: null, error: error.message };
       }
     }
   }
@@ -117,13 +172,14 @@ export const getStreamHeaders = (referer = 'https://megacloud.tv') => {
 };
 
 /**
- * Setup HLS player with proxy
+ * Setup HLS player with proxy and fallback
  */
 export const setupHlsPlayer = (videoElement, m3u8Url, options = {}) => {
   const {
     referer = 'https://megacloud.tv',
     autoplay = true,
-    onQualityChange = null
+    onQualityChange = null,
+    onError = null
   } = options;
 
   // Check if HLS.js is supported
@@ -134,7 +190,8 @@ export const setupHlsPlayer = (videoElement, m3u8Url, options = {}) => {
         xhr.setRequestHeader('Origin', new URL(referer).origin);
       },
       enableWorker: true,
-      lowLatencyMode: true
+      lowLatencyMode: true,
+      backBufferLength: 90
     });
 
     // Proxy the M3U8 URL
@@ -153,7 +210,8 @@ export const setupHlsPlayer = (videoElement, m3u8Url, options = {}) => {
           index,
           height: level.height,
           width: level.width,
-          bitrate: level.bitrate
+          bitrate: level.bitrate,
+          label: `${level.height}p`
         }));
         onQualityChange(levels);
       }
@@ -161,6 +219,7 @@ export const setupHlsPlayer = (videoElement, m3u8Url, options = {}) => {
 
     hls.on(window.Hls.Events.ERROR, (event, data) => {
       console.error('HLS Error:', data);
+      
       if (data.fatal) {
         switch (data.type) {
           case window.Hls.ErrorTypes.NETWORK_ERROR:
@@ -174,6 +233,7 @@ export const setupHlsPlayer = (videoElement, m3u8Url, options = {}) => {
           default:
             console.log('Fatal error, destroying player...');
             hls.destroy();
+            if (onError) onError(data);
             break;
         }
       }
@@ -193,6 +253,7 @@ export const setupHlsPlayer = (videoElement, m3u8Url, options = {}) => {
     return null;
   } else {
     console.error('HLS not supported in this browser');
+    if (onError) onError({ type: 'UNSUPPORTED', message: 'HLS not supported' });
     return null;
   }
 };
@@ -275,16 +336,67 @@ export const formatDuration = (seconds) => {
   return `${minutes}:${secs.toString().padStart(2, '0')}`;
 };
 
+/**
+ * Extract video URL from iframe
+ */
+export const extractVideoFromIframe = async (iframeUrl) => {
+  try {
+    const response = await fetchWithCors(iframeUrl);
+    const match = response.match(/https?:\/\/[^\s"']+\.m3u8[^\s"']*/g);
+    return match ? match[0] : null;
+  } catch (error) {
+    console.error('Failed to extract video from iframe:', error);
+    return null;
+  }
+};
+
+/**
+ * Get best quality from sources array
+ */
+export const getBestQuality = (sources) => {
+  if (!sources || sources.length === 0) return null;
+  
+  // Sort by quality (highest first)
+  const sorted = sources.sort((a, b) => {
+    const aQuality = parseInt(a.quality) || 0;
+    const bQuality = parseInt(b.quality) || 0;
+    return bQuality - aQuality;
+  });
+  
+  return sorted[0];
+};
+
+/**
+ * Create video player with controls
+ */
+export const createVideoPlayer = (container, m3u8Url, options = {}) => {
+  const video = document.createElement('video');
+  video.className = 'w-full h-full';
+  video.controls = true;
+  
+  if (options.poster) {
+    video.poster = options.poster;
+  }
+  
+  container.appendChild(video);
+  
+  const hls = setupHlsPlayer(video, m3u8Url, options);
+  
+  return { video, hls };
+};
+
 // ============================================
 // EXPORT ALL
 // ============================================
 
 export default {
   CORS_PROXIES,
+  M3U8_PROXIES,
   M3U8_PROXY,
   proxifyUrl,
   proxifyM3U8,
   fetchWithCors,
+  fetchM3U8WithFallback,
   processM3U8Playlist,
   getStreamHeaders,
   setupHlsPlayer,
@@ -294,5 +406,8 @@ export default {
   isM3U8,
   getQualityFromUrl,
   formatBytes,
-  formatDuration
+  formatDuration,
+  extractVideoFromIframe,
+  getBestQuality,
+  createVideoPlayer
 };
