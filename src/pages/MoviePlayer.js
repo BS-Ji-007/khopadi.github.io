@@ -12,20 +12,16 @@ const MoviePlayer = () => {
   // Streaming servers
   const servers = [
     {
-      name: 'VidSrc',
-      url: (movieId, contentType) => `https://vidsrc.xyz/embed/${contentType}/${movieId}`
+      name: '2embed',
+      url: (id, type) => `https://2embed.cc/embed${type === 'tv' ? '/tv' : ''}/${id}`
     },
     {
-      name: 'VidSrc Pro',
-      url: (movieId, contentType) => `https://vidsrc.pro/embed/${contentType}/${movieId}`
+      name: 'Vidsrc',
+      url: (id, type) => `https://vidsrc.me/embed/${type === 'tv' ? 'tv' : 'movie'}?tmdb=${id}`
     },
     {
-      name: '2Embed',
-      url: (movieId) => `https://www.2embed.cc/embed/${movieId}`
-    },
-    {
-      name: 'Embed.su',
-      url: (movieId, contentType) => `https://embed.su/embed/${contentType}/${movieId}`
+      name: 'Vidsrc.vip',
+      url: (id, type) => `https://vidsrc.vip/embed/${type === 'tv' ? 'tv' : 'movie'}?tmdb=${id}`
     }
   ];
 
@@ -89,7 +85,7 @@ const MoviePlayer = () => {
         <div className="bg-gray-800 rounded-lg p-6 mb-6">
           <div className="flex flex-col md:flex-row gap-6">
             {/* Poster */}
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 mx-auto md:mx-0">
               <img
                 src={getImageUrl(movie.poster_path, 'w342')}
                 alt={movie.title || movie.name}
@@ -99,10 +95,10 @@ const MoviePlayer = () => {
             </div>
 
             {/* Details */}
-            <div className="flex-1">
-              <h1 className="text-4xl font-bold mb-4">{movie.title || movie.name}</h1>
+            <div className="flex-1 text-center md:text-left">
+              <h1 className="text-3xl sm:text-4xl font-bold mb-4">{movie.title || movie.name}</h1>
               
-              <div className="flex flex-wrap items-center gap-4 mb-4">
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mb-4">
                 <span className="bg-yellow-500 text-black px-3 py-1 rounded font-bold">
                   ⭐ {movie.vote_average?.toFixed(1) || 'N/A'}
                 </span>
@@ -140,12 +136,12 @@ const MoviePlayer = () => {
           <p className="text-sm text-gray-400 mb-4">
             If current server is not working, try switching to another server.
           </p>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3">
             {servers.map((server, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentServer(index)}
-                className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                className={`w-full sm:w-auto px-6 py-3 rounded-lg font-semibold transition-all ${
                   currentServer === index
                     ? 'bg-red-600 text-white scale-105'
                     : 'bg-gray-700 text-gray-300 hover:bg-gray-600'

@@ -16,6 +16,7 @@ const AnimePlayer = () => {
   const [audioType, setAudioType] = useState('sub');
   const [streamData, setStreamData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [videoLoading, setVideoLoading] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [apiServer, setApiServer] = useState(getCurrentServer());
   
@@ -34,6 +35,7 @@ const AnimePlayer = () => {
 
   const loadAnimeData = async () => {
     try {
+      setLoading(true);
       const [animeData, episodesData] = await Promise.all([
         hianime.details(id),
         hianime.episodes(id)
@@ -41,21 +43,20 @@ const AnimePlayer = () => {
       setAnime(animeData);
       setEpisodes(episodesData.episodes || []);
       
-      // Auto-load first episode if no episode specified
       if (!episodeId && episodesData.episodes?.length > 0) {
         const firstEp = episodesData.episodes[0];
         setSearchParams({ episode: firstEp.id, ep: firstEp.episodeNumber });
       }
-      setLoading(false);
     } catch (error) {
       console.error('Load anime error:', error);
+    } finally {
       setLoading(false);
     }
   };
 
   const loadEpisodeData = async () => {
     try {
-      setLoading(true);
+      setVideoLoading(true);
       const [serversData, streamData] = await Promise.all([
         hianime.servers(episodeId),
         hianime.stream(episodeId, currentServer, audioType)
@@ -66,11 +67,12 @@ const AnimePlayer = () => {
       
       if (streamData?.link?.file) {
         initializePlayer(streamData.link.file, streamData.tracks || []);
+      } else {
+        setVideoLoading(false);
       }
-      setLoading(false);
     } catch (error) {
       console.error('Load episode error:', error);
-      setLoading(false);
+      setVideoLoading(false);
     }
   };
 
@@ -78,7 +80,6 @@ const AnimePlayer = () => {
     const video = videoRef.current;
     if (!video) return;
 
-    // Cleanup previous instance
     if (hlsRef.current) {
       hlsRef.current.destroy();
     }
@@ -87,7 +88,9 @@ const AnimePlayer = () => {
       const hls = new Hls({
         maxBufferLength: 30,
         maxMaxBufferLength: 60,
-        enableWorker: true
+        enableWorker: true,
+        //-1 for auto quality selection
+        startLevel: -1
       });
       
       hls.loadSource(url);
@@ -96,11 +99,13 @@ const AnimePlayer = () => {
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         video.play().catch(e => console.log('Autoplay prevented'));
         setPlaying(true);
+        setVideoLoading(false);
       });
 
       hls.on(Hls.Events.ERROR, (event, data) => {
         if (data.fatal) {
           console.error('HLS error:', data);
+          handleHlsError();
         }
       });
 
@@ -110,10 +115,15 @@ const AnimePlayer = () => {
       video.addEventListener('loadedmetadata', () => {
         video.play().catch(e => console.log('Autoplay prevented'));
         setPlaying(true);
+        setVideoLoading(false);
       });
+    } else {
+      setVideoLoading(false);
     }
 
-    // Add subtitles
+    const oldTracks = video.querySelectorAll('track');
+    oldTracks.forEach(track => track.remove());
+
     tracks.forEach((track, index) => {
       if (track.kind === 'captions' || track.kind === 'subtitles') {
         const trackElement = document.createElement('track');
@@ -125,6 +135,18 @@ const AnimePlayer = () => {
         video.appendChild(trackElement);
       }
     });
+  };
+
+  const handleHlsError = () => {
+    const availableApiServers = getAllServers();
+    const currentApiServerIndex = apiServer;
+    const nextApiServerIndex = (currentApiServerIndex + 1) % availableApiServers.length;
+    
+    if (nextApiServerIndex !== apiServer) {
+      handleApiServerChange(nextApiServerIndex);
+    } else {
+      console.error('All API servers failed.');
+    }
   };
 
   const handleServerChange = (serverName) => {
@@ -141,19 +163,7 @@ const AnimePlayer = () => {
     setSearchParams({ episode: episode.id, ep: episode.episodeNumber });
   };
 
-  const skipIntro = () => {
-    if (videoRef.current && streamData?.intro) {
-      videoRef.current.currentTime = streamData.intro.end;
-    }
-  };
-
-  const skipOutro = () => {
-    if (videoRef.current && streamData?.outro) {
-      videoRef.current.currentTime = streamData.outro.end;
-    }
-  };
-
-  if (loading && !anime) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center pt-20">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-600"></div>
@@ -167,7 +177,6 @@ const AnimePlayer = () => {
   return (
     <div className="min-h-screen pt-16 bg-gray-900">
       <div className="container mx-auto px-4 py-6">
-        {/* Video Player */}
         <div className="relative bg-black rounded-lg overflow-hidden mb-6">
           <video
             ref={videoRef}
@@ -175,30 +184,15 @@ const AnimePlayer = () => {
             controls
             controlsList="nodownload"
             playsInline
-          >
-            Your browser does not support the video tag.
-          </video>
+          />
           
-          {/* Skip Buttons */}
-          {streamData?.intro && (
-            <button
-              onClick={skipIntro}
-              className="absolute bottom-24 right-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-all"
-            >
-              Skip Intro →
-            </button>
-          )}
-          {streamData?.outro && (
-            <button
-              onClick={skipOutro}
-              className="absolute bottom-24 right-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-all"
-            >
-              Skip Outro →
-            </button>
+          {videoLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
+            </div>
           )}
         </div>
 
-        {/* Info Bar */}
         <div className="bg-gray-800 rounded-lg p-4 mb-6">
           <h1 className="text-2xl font-bold text-white mb-2">{anime?.title}</h1>
           <p className="text-gray-400">
@@ -206,83 +200,75 @@ const AnimePlayer = () => {
           </p>
         </div>
 
-        {/* Audio Type Switch */}
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => setAudioType('sub')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
-              audioType === 'sub'
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
-          >
-            🎌 SUB
-          </button>
-          <button
-            onClick={() => setAudioType('dub')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
-              audioType === 'dub'
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
-          >
-            🎙️ DUB
-          </button>
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="bg-gray-800 rounded-lg p-4">
+            <div className="flex items-center gap-4 mb-4">
+              <h3 className="text-lg font-semibold text-white">Audio & Servers</h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setAudioType('sub')}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                    audioType === 'sub' ? 'bg-red-600 text-white' : 'bg-gray-700 hover:bg-gray-600'
+                  }`}
+                >
+                  SUB
+                </button>
+                <button
+                  onClick={() => setAudioType('dub')}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                    audioType === 'dub' ? 'bg-red-600 text-white' : 'bg-gray-700 hover:bg-gray-600'
+                  }`}
+                >
+                  DUB
+                </button>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-2">
+              {availableServers.map((server) => (
+                <button
+                  key={server.serverName}
+                  onClick={() => handleServerChange(server.serverName.toLowerCase())}
+                  className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                    currentServer === server.serverName.toLowerCase() ? 'bg-yellow-500 text-black' : 'bg-gray-700 hover:bg-gray-600'
+                  }`}
+                >
+                  {server.serverName}
+                </button>
+              ))}
+            </div>
+          </div>
 
-        {/* Streaming Servers */}
-        <div className="bg-gray-800 rounded-lg p-4 mb-6">
-          <h3 className="text-lg font-semibold text-white mb-3">🎬 Streaming Servers</h3>
-          <div className="flex flex-wrap gap-2">
-            {availableServers.map((server, index) => (
-              <button
-                key={index}
-                onClick={() => handleServerChange(server.serverName.toLowerCase())}
-                className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-                  currentServer === server.serverName.toLowerCase()
-                    ? 'bg-yellow-500 text-black'
-                    : 'bg-gray-700 text-white hover:bg-gray-600'
-                }`}
-              >
-                📡 {server.serverName}
-              </button>
-            ))}
+          <div className="bg-gray-800 rounded-lg p-4">
+            <h3 className="text-lg font-semibold text-white mb-2">API Servers</h3>
+            <p className="text-xs text-gray-400 mb-3">If video fails, try another API server.</p>
+            <div className="flex flex-wrap gap-2">
+              {allApiServers.map((server, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleApiServerChange(index)}
+                  className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                    apiServer === index ? 'bg-yellow-500 text-black' : 'bg-gray-700 hover:bg-gray-600'
+                  }`}
+                >
+                  API {index + 1}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* API Servers */}
-        <div className="bg-gray-800 rounded-lg p-4 mb-6">
-          <h3 className="text-lg font-semibold text-white mb-3">🌐 API Servers</h3>
-          <p className="text-sm text-gray-400 mb-3">If the current server is not working, please try switching to other servers.</p>
-          <div className="flex flex-wrap gap-2">
-            {allApiServers.map((server, index) => (
-              <button
-                key={index}
-                onClick={() => handleApiServerChange(index)}
-                className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
-                  apiServer === index
-                    ? 'bg-yellow-500 text-black'
-                    : 'bg-gray-700 text-white hover:bg-gray-600'
-                }`}
-              >
-                📡 Server {index + 1}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Episodes List */}
         <div className="bg-gray-800 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-white mb-3">📺 Episodes</h3>
-          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 max-h-96 overflow-y-auto">
+          <h3 className="text-lg font-semibold text-white mb-3">Episodes</h3>
+          <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-2 max-h-80 overflow-y-auto">
             {episodes.map((episode) => (
               <button
                 key={episode.id}
                 onClick={() => handleEpisodeChange(episode)}
-                className={`aspect-square rounded-lg font-semibold transition-all ${
+                className={`aspect-square rounded-lg font-semibold transition-all flex items-center justify-center text-center p-1 ${
                   episodeId === episode.id
-                    ? 'bg-red-600 text-white scale-110'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    ? 'bg-red-600 text-white scale-105'
+                    : 'bg-gray-700 hover:bg-gray-600'
                 } ${episode.isFiller ? 'border-2 border-yellow-500' : ''}`}
                 title={episode.title || `Episode ${episode.episodeNumber}`}
               >

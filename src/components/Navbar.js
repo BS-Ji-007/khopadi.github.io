@@ -5,7 +5,7 @@ import { useTheme } from '../App';
 const Navbar = () => {
   const { isDarkMode, toggleTheme, colors } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -40,6 +40,14 @@ const Navbar = () => {
       setSearchQuery('');
     }
   };
+
+  const popularSearches = [
+    'one piece',
+    'jujutsu kaisen',
+    'attack on titan',
+    'demon slayer',
+    'naruto',
+  ];
 
   return (
     <nav className={`fixed w-full z-50 ${colors.bg} ${colors.text} shadow-lg`}>
@@ -211,6 +219,17 @@ const Navbar = () => {
                 🔍 Search
               </button>
             </form>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {popularSearches.map((search) => (
+                <button
+                  key={search}
+                  onClick={() => setSearchQuery(search)}
+                  className="px-3 py-1 bg-gray-700 rounded-full text-sm hover:bg-gray-600 transition-colors"
+                >
+                  {search}
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>

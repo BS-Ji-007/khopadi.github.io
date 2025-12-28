@@ -3,9 +3,6 @@ import axios from 'axios';
 // HiAnime API Configuration (Multiple Servers)
 const HIANIME_SERVERS = [
   'https://hianime-api2.vercel.app',
-  'https://api-aniwatch.onrender.com',
-  'https://hianime-api.onrender.com',
-  'https://api.aniwatch.pro'
 ];
 
 let currentServerIndex = 0;
