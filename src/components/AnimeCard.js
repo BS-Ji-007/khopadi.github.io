@@ -6,50 +6,51 @@ const AnimeCard = ({ anime }) => {
   const poster = anime.poster || '/placeholder-movie.jpg';
   const type = anime.type || 'TV';
   const episodes = anime.episodes?.sub || anime.episodes?.eps || 0;
-  const duration = anime.duration || 'N/A';
 
   return (
     <Link
       to={`/anime/watch/${anime.id}`}
-      className="group relative block overflow-hidden rounded-lg bg-gray-800 transition-transform duration-300 hover:scale-105 hover:shadow-2xl"
+      className="group relative block rounded-xl overflow-hidden transition-all duration-300 hover:scale-[1.04] hover:-translate-y-1"
+      style={{ background: 'var(--bg-card)', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
+      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(124,58,237,0.4)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.4)'; }}
     >
-      {/* Anime Poster */}
       <div className="aspect-[2/3] overflow-hidden">
         <img
-          src={poster}
-          alt={title}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+          src={poster} alt={title}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
           loading="lazy"
-          onError={(e) => {
-            e.target.src = '/placeholder-movie.jpg';
-          }}
+          onError={(e) => { e.target.src = '/placeholder-movie.jpg'; }}
         />
       </div>
 
-      {/* Overlay Info */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-        <div className="absolute bottom-0 left-0 right-0 p-4">
-          <h3 className="mb-1 text-sm font-semibold text-white line-clamp-2">
-            {title}
-          </h3>
-          <div className="flex items-center justify-between text-xs text-gray-300">
-            <span>🎥 {type}</span>
-            {episodes > 0 && (
-              <span>📺 {episodes} eps</span>
-            )}
-          </div>
+      {/* Hover overlay */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3"
+        style={{ background: 'linear-gradient(to top, rgba(6,8,16,0.97) 0%, rgba(6,8,16,0.55) 55%, transparent 100%)' }}
+      >
+        <h3 className="text-white text-sm font-semibold leading-tight line-clamp-2 mb-1">{title}</h3>
+        <div className="flex items-center justify-between text-xs" style={{ color: 'var(--text-secondary)' }}>
+          <span>{type}</span>
+          {episodes > 0 && <span>{episodes} eps</span>}
         </div>
       </div>
 
-      {/* Type Badge */}
-      <div className="absolute right-2 top-2 rounded bg-red-600 px-2 py-1 text-xs font-bold text-white">
+      {/* Type badge */}
+      <div
+        className="absolute top-2 right-2 px-2 py-0.5 rounded-md text-white text-[10px] font-bold tracking-wider font-display"
+        style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)' }}
+      >
         {type}
       </div>
 
-      {/* Episodes Badge */}
+      {/* Episodes badge */}
       {episodes > 0 && (
-        <div className="absolute left-2 top-2 rounded bg-black/70 px-2 py-1 text-xs font-bold text-white backdrop-blur-sm">
-          📺 {episodes}
+        <div
+          className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-xs font-bold"
+          style={{ background: 'rgba(0,0,0,0.72)', color: '#a78bfa', backdropFilter: 'blur(6px)', border: '1px solid rgba(167,139,250,0.25)' }}
+        >
+          {episodes} ep
         </div>
       )}
     </Link>

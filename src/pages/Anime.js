@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { hianime } from '../utils/hianimeApi';
 import AnimeCard from '../components/AnimeCard';
 
+const CATEGORIES = [
+  { value: 'top-airing', label: 'Top Airing', icon: '🔥' },
+  { value: 'popular', label: 'Most Popular', icon: '⭐' },
+  { value: 'recent', label: 'Recent Episodes', icon: '🆕' },
+];
+
 const Anime = () => {
   const [animes, setAnimes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -9,100 +15,78 @@ const Anime = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [category, setCategory] = useState('top-airing');
 
-  useEffect(() => {
-    loadAnimes();
-  }, [page, category]);
+  useEffect(() => { loadAnimes(); }, [page, category]);
 
   const loadAnimes = async () => {
     setLoading(true);
     let data;
-    
-    switch(category) {
-      case 'top-airing':
-        data = await hianime.topAiring(page);
-        break;
-      case 'popular':
-        data = await hianime.popular(page);
-        break;
-      case 'recent':
-        data = await hianime.recentEpisodes(page);
-        break;
-      default:
-        data = await hianime.topAiring(page);
-    }
-    
+    if (category === 'popular') data = await hianime.popular(page);
+    else if (category === 'recent') data = await hianime.recentEpisodes(page);
+    else data = await hianime.topAiring(page);
     setAnimes(data.animes || []);
     setTotalPages(data.pageInfo?.totalPages || 1);
     setLoading(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const categoryOptions = [
-    { value: 'top-airing', label: '🔥 Top Airing', emoji: '🔥' },
-    { value: 'popular', label: '⭐ Most Popular', emoji: '⭐' },
-    { value: 'recent', label: '🆕 Recent Episodes', emoji: '🆕' }
-  ];
-
   return (
-    <div className="min-h-screen pt-20 pb-10">
-      <div className="container mx-auto px-4">
-        {/* Header */}
+    <div className="min-h-screen pt-24 pb-10" style={{ background: 'var(--bg-deep)' }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="mb-8">
-          <h1 className="mb-4 text-4xl font-bold">✨ Anime Hub</h1>
-          <p className="mb-4 text-gray-400">Watch the best anime with multiple servers and subtitles</p>
-          
-          {/* Category Selector */}
+          <h1 className="font-display text-5xl text-white tracking-wide mb-2">ANIME HUB</h1>
+          <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>Watch the best anime with multiple servers & subtitles</p>
+
+          {/* Category pills */}
           <div className="flex flex-wrap gap-3">
-            {categoryOptions.map(option => (
+            {CATEGORIES.map((cat) => (
               <button
-                key={option.value}
-                onClick={() => {
-                  setCategory(option.value);
-                  setPage(1);
-                }}
-                className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                  category === option.value
-                    ? 'bg-red-600 text-white scale-105'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                }`}
+                key={cat.value}
+                onClick={() => { setCategory(cat.value); setPage(1); }}
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200"
+                style={
+                  category === cat.value
+                    ? { background: 'var(--red)', color: '#fff', boxShadow: '0 4px 20px var(--red-glow)' }
+                    : { background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }
+                }
               >
-                {option.emoji} {option.label}
+                {cat.icon} {cat.label}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Anime Grid */}
         {loading ? (
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {[...Array(18)].map((_, i) => (
-              <div key={i} className="aspect-[2/3] animate-pulse rounded-lg bg-gray-800" />
+              <div key={i} className="aspect-[2/3] rounded-xl skeleton" />
             ))}
           </div>
         ) : animes.length > 0 ? (
           <>
-            <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {animes.map((anime) => (
-                <AnimeCard key={anime.id} anime={anime} />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {animes.map((anime, i) => (
+                <div key={anime.id} className="animate-fade-up" style={{ animationDelay: `${Math.min(i * 25, 300)}ms` }}>
+                  <AnimeCard anime={anime} />
+                </div>
               ))}
             </div>
 
-            {/* Pagination */}
-            <div className="mt-10 flex items-center justify-center gap-4">
+            <div className="mt-12 flex items-center justify-center gap-4">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="rounded-lg bg-gray-800 px-6 py-2 font-semibold text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
+                className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-40 hover:bg-white/10"
+                style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
               >
-                ← Previous
+                ← Prev
               </button>
-              <span className="text-lg">
-                Page {page} of {Math.min(totalPages, 100)}
+              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                Page <span className="text-white font-semibold">{page}</span> of {Math.min(totalPages, 100)}
               </span>
               <button
                 onClick={() => setPage(p => Math.min(100, p + 1))}
                 disabled={page >= totalPages || page >= 100}
-                className="rounded-lg bg-red-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+                className="btn-primary text-sm disabled:opacity-40"
               >
                 Next →
               </button>
@@ -110,7 +94,7 @@ const Anime = () => {
           </>
         ) : (
           <div className="py-20 text-center">
-            <p className="text-xl text-gray-400">🚨 No anime found</p>
+            <p className="text-xl" style={{ color: 'var(--text-secondary)' }}>No anime found</p>
           </div>
         )}
       </div>

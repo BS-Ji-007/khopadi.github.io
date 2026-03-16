@@ -2,167 +2,122 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { tmdb, getImageUrl } from '../utils/multiApi';
 
+const SERVERS = [
+  { name: '2Embed',     url: (id, type) => `https://2embed.cc/embed${type === 'tv' ? '/tv' : ''}/${id}` },
+  { name: 'Vidsrc',     url: (id, type) => `https://vidsrc.me/embed/${type === 'tv' ? 'tv' : 'movie'}?tmdb=${id}` },
+  { name: 'Vidsrc.vip', url: (id, type) => `https://vidsrc.vip/embed/${type === 'tv' ? 'tv' : 'movie'}?tmdb=${id}` },
+];
+
 const MoviePlayer = () => {
   const { id, type } = useParams();
   const navigate = useNavigate();
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [currentServer, setCurrentServer] = useState(0);
-
-  // Streaming servers
-  const servers = [
-    {
-      name: '2embed',
-      url: (id, type) => `https://2embed.cc/embed${type === 'tv' ? '/tv' : ''}/${id}`
-    },
-    {
-      name: 'Vidsrc',
-      url: (id, type) => `https://vidsrc.me/embed/${type === 'tv' ? 'tv' : 'movie'}?tmdb=${id}`
-    },
-    {
-      name: 'Vidsrc.vip',
-      url: (id, type) => `https://vidsrc.vip/embed/${type === 'tv' ? 'tv' : 'movie'}?tmdb=${id}`
-    }
-  ];
+  const [server, setServer] = useState(0);
+  const contentType = type || 'movie';
 
   useEffect(() => {
-    const fetchDetails = async () => {
+    (async () => {
       try {
         setLoading(true);
-        const data = await tmdb.details(id, type || 'movie');
+        const data = await tmdb.details(id, contentType);
         setMovie(data);
-      } catch (error) {
-        console.error('Error fetching details:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDetails();
+      } catch (e) { console.error(e); }
+      finally { setLoading(false); }
+    })();
   }, [id, type]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center pt-20 bg-gray-900">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-red-600"></div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-deep)' }}>
+      <div className="w-12 h-12 rounded-full border-2 border-t-red-500 border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+    </div>
+  );
 
   if (!movie) return null;
 
-  const contentType = type || 'movie';
-  const streamUrl = servers[currentServer].url(id, contentType);
+  const streamUrl = SERVERS[server].url(id, contentType);
+  const title = movie.title || movie.name;
+  const year = movie.release_date ? new Date(movie.release_date).getFullYear()
+    : movie.first_air_date ? new Date(movie.first_air_date).getFullYear() : null;
 
   return (
-    <div className="min-h-screen pt-16 bg-gray-900 text-white">
-      <div className="container mx-auto px-4 py-6">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-4 flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+    <div className="min-h-screen pt-16" style={{ background: 'var(--bg-deep)' }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+
+        {/* Back */}
+        <button onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-sm mb-5 transition-colors hover:text-white"
+          style={{ color: 'var(--text-secondary)' }}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
           </svg>
-          <span>Back</span>
+          Back
         </button>
 
-        {/* Video Player */}
-        <div className="relative bg-black rounded-lg overflow-hidden mb-6 shadow-2xl">
+        {/* Player */}
+        <div className="relative rounded-2xl overflow-hidden mb-6" style={{ background: '#000', boxShadow: '0 24px 64px rgba(0,0,0,0.8)' }}>
           <div className="aspect-video">
             <iframe
               src={streamUrl}
               className="w-full h-full"
               allowFullScreen
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              title={movie.title || movie.name}
-            ></iframe>
+              title={title}
+            />
           </div>
         </div>
 
-        {/* Movie Info */}
-        <div className="bg-gray-800 rounded-lg p-6 mb-6">
-          <div className="flex flex-col md:flex-row gap-6">
-            {/* Poster */}
-            <div className="flex-shrink-0 mx-auto md:mx-0">
-              <img
-                src={getImageUrl(movie.poster_path, 'w342')}
-                alt={movie.title || movie.name}
-                className="w-48 h-auto rounded-lg shadow-lg"
-                onError={(e) => { e.target.src = '/placeholder-movie.jpg'; }}
-              />
-            </div>
-
-            {/* Details */}
-            <div className="flex-1 text-center md:text-left">
-              <h1 className="text-3xl sm:text-4xl font-bold mb-4">{movie.title || movie.name}</h1>
-              
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mb-4">
-                <span className="bg-yellow-500 text-black px-3 py-1 rounded font-bold">
-                  ⭐ {movie.vote_average?.toFixed(1) || 'N/A'}
-                </span>
-                <span className="text-gray-400">
-                  {movie.release_date ? new Date(movie.release_date).getFullYear() : 
-                   movie.first_air_date ? new Date(movie.first_air_date).getFullYear() : 'N/A'}
-                </span>
-                {movie.runtime && (
-                  <span className="text-gray-400">{movie.runtime} min</span>
-                )}
-                <span className="text-gray-400">
-                  {movie.genres?.map(g => g.name).join(', ') || 'N/A'}
-                </span>
-              </div>
-
-              <p className="text-gray-300 leading-relaxed mb-4">
-                {movie.overview || 'No description available'}
-              </p>
-
-              {movie.credits?.cast && movie.credits.cast.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-semibold mb-2">🎭 Cast</h3>
-                  <p className="text-gray-400">
-                    {movie.credits.cast.slice(0, 5).map(c => c.name).join(', ')}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Server Selection */}
-        <div className="bg-gray-800 rounded-lg p-6 mb-6">
-          <h3 className="text-xl font-semibold mb-4">🌐 Select Server</h3>
-          <p className="text-sm text-gray-400 mb-4">
-            If current server is not working, try switching to another server.
-          </p>
-          <div className="flex flex-col sm:flex-row flex-wrap gap-3">
-            {servers.map((server, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentServer(index)}
-                className={`w-full sm:w-auto px-6 py-3 rounded-lg font-semibold transition-all ${
-                  currentServer === index
-                    ? 'bg-red-600 text-white scale-105'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
-              >
-                📡 {server.name}
+        {/* Server selector */}
+        <div className="rounded-2xl p-5 mb-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+          <p className="text-sm font-semibold mb-3 text-white">📡 Switch Server</p>
+          <div className="flex flex-wrap gap-2">
+            {SERVERS.map((s, i) => (
+              <button key={i} onClick={() => setServer(i)}
+                className="px-5 py-2 rounded-xl text-sm font-semibold transition-all"
+                style={server === i
+                  ? { background: 'var(--red)', color: '#fff', boxShadow: '0 4px 16px var(--red-glow)' }
+                  : { background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+                {s.name}
               </button>
             ))}
           </div>
+          <p className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
+            If one server doesn't load, try another. Some content may not be available on all servers.
+          </p>
         </div>
 
-        {/* Note */}
-        <div className="bg-yellow-500/10 border border-yellow-500 rounded-lg p-4">
-          <p className="text-yellow-500 text-sm">
-            ⚠️ <strong>Note:</strong> Streaming sources are third-party embedded players. 
-            If a server doesn't work, please try another one. Some content may not be available.
-          </p>
+        {/* Movie info */}
+        <div className="rounded-2xl p-5 flex flex-col md:flex-row gap-5" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+          <img
+            src={getImageUrl(movie.poster_path, 'w342')}
+            alt={title}
+            className="w-32 h-auto rounded-xl flex-shrink-0 mx-auto md:mx-0"
+            onError={e => e.target.src = '/placeholder-movie.jpg'}
+          />
+          <div>
+            <h1 className="font-display text-3xl text-white tracking-wide mb-2">{title}</h1>
+            <div className="flex flex-wrap gap-3 mb-3 text-sm">
+              {movie.vote_average > 0 && (
+                <span className="font-bold" style={{ color: '#fbbf24' }}>★ {movie.vote_average.toFixed(1)}</span>
+              )}
+              {year && <span style={{ color: 'var(--text-secondary)' }}>{year}</span>}
+              {movie.runtime && <span style={{ color: 'var(--text-secondary)' }}>{movie.runtime} min</span>}
+              {movie.genres?.slice(0,3).map(g => (
+                <span key={g.id} style={{ color: 'var(--text-secondary)' }}>{g.name}</span>
+              ))}
+            </div>
+            <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+              {movie.overview || 'No description available.'}
+            </p>
+            {movie.credits?.cast?.length > 0 && (
+              <p className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
+                Cast: {movie.credits.cast.slice(0, 5).map(c => c.name).join(', ')}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 };
-
 export default MoviePlayer;

@@ -44,22 +44,22 @@ function App() {
 
   const colors = isDarkMode
     ? {
-        bg: 'bg-gray-900',
-        text: 'text-white',
-        cardBg: 'bg-gray-800',
-        border: 'border-gray-700'
+        bg: 'bg-[#060810]',
+        text: 'text-[#f0f2f8]',
+        cardBg: 'bg-[#0e1117]',
+        border: 'border-[rgba(255,255,255,0.07)]'
       }
     : {
-        bg: 'bg-white',
+        bg: 'bg-gray-50',
         text: 'text-gray-900',
-        cardBg: 'bg-gray-100',
-        border: 'border-gray-300'
+        cardBg: 'bg-white',
+        border: 'border-gray-200'
       };
 
   return (
     <ThemeContext.Provider value={{ isDarkMode, toggleTheme, colors }}>
       <Router basename="/khopadi.github.io">
-        <div className={`min-h-screen ${colors.bg} ${colors.text}`}>
+        <div className="min-h-screen" style={{ background: "var(--bg-deep)", color: "var(--text-primary)" }}>
           <Navbar />
           <Routes>
             <Route path="/" element={<Home />} />

@@ -3,18 +3,12 @@ import { useNavigate, Link } from 'react-router-dom';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    username: '',
-    password: ''
-  });
+  const [formData, setFormData] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
   };
 
@@ -22,35 +16,21 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
-    // Validation
     if (!formData.username || !formData.password) {
       setError('Please enter both username and password');
       setLoading(false);
       return;
     }
-
     try {
-      // Get users from localStorage
       const users = JSON.parse(localStorage.getItem('users') || '[]');
-      
-      // Find user
-      const user = users.find(
-        u => u.username === formData.username && u.password === formData.password
-      );
-
+      const user = users.find(u => u.username === formData.username && u.password === formData.password);
       if (user) {
-        // Login successful
-        const loginData = {
-          username: user.username,
-          loginTime: new Date().toISOString()
-        };
-        localStorage.setItem('currentUser', JSON.stringify(loginData));
+        localStorage.setItem('currentUser', JSON.stringify({ username: user.username, loginTime: new Date().toISOString() }));
         navigate('/');
       } else {
         setError('Invalid username or password');
       }
-    } catch (error) {
+    } catch {
       setError('Login failed. Please try again.');
     } finally {
       setLoading(false);
@@ -58,97 +38,75 @@ const Login = () => {
   };
 
   const handleGuestLogin = () => {
-    // Guest login
-    const guestData = {
-      username: 'Guest',
-      loginTime: new Date().toISOString()
-    };
-    localStorage.setItem('currentUser', JSON.stringify(guestData));
+    localStorage.setItem('currentUser', JSON.stringify({ username: 'Guest', loginTime: new Date().toISOString() }));
     navigate('/');
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center pt-20 pb-10">
-      <div className="w-full max-w-md px-6">
-        <div className="bg-gray-800 rounded-2xl shadow-2xl p-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">🎬 Login</h1>
-            <p className="text-gray-400">Welcome back to Khopadi!</p>
-          </div>
+    <div className="min-h-screen flex items-center justify-center px-4 pt-16" style={{ background: 'var(--bg-deep)' }}>
+      {/* Background glow */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 50%, rgba(232,16,42,0.08) 0%, transparent 65%)' }} />
 
-          {/* Error Message */}
+      <div className="w-full max-w-md relative z-10">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg,#e8102a,#ff4d2e)' }}>
+              <span className="font-display text-white text-2xl">K</span>
+            </div>
+            <span className="font-display text-white text-3xl tracking-widest">KHOPADI</span>
+          </div>
+          <p style={{ color: 'var(--text-secondary)' }} className="text-sm">Welcome back — sign in to continue</p>
+        </div>
+
+        <div className="rounded-2xl p-8" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
           {error && (
-            <div className="bg-red-500/10 border border-red-500 text-red-500 rounded-lg p-3 mb-6 text-sm">
+            <div className="mb-5 px-4 py-3 rounded-xl text-sm text-red-400" style={{ background: 'rgba(232,16,42,0.1)', border: '1px solid rgba(232,16,42,0.3)' }}>
               {error}
             </div>
           )}
 
-          {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Username */}
             <div>
-              <label className="block text-sm font-semibold text-gray-300 mb-2">
-                Username
-              </label>
+              <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>Username</label>
               <input
-                type="text"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500 transition-colors"
-                placeholder="Enter your username"
+                type="text" name="username" value={formData.username} onChange={handleChange}
+                className="input-field" placeholder="Enter your username"
               />
             </div>
-
-            {/* Password */}
             <div>
-              <label className="block text-sm font-semibold text-gray-300 mb-2">
-                Password
-              </label>
+              <label className="block text-sm font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>Password</label>
               <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500 transition-colors"
-                placeholder="Enter your password"
+                type="password" name="password" value={formData.password} onChange={handleChange}
+                className="input-field" placeholder="Enter your password"
               />
             </div>
-
-            {/* Login Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Logging in...' : 'Login'}
+            <button type="submit" disabled={loading} className="btn-primary w-full text-center disabled:opacity-50 mt-2">
+              {loading ? 'Signing in…' : 'Sign In'}
             </button>
           </form>
 
-          {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-600"></div>
+              <div className="w-full border-t" style={{ borderColor: 'var(--border)' }} />
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-gray-800 text-gray-400">OR</span>
+            <div className="relative flex justify-center text-xs">
+              <span className="px-3" style={{ background: 'var(--bg-card)', color: 'var(--text-muted)' }}>OR</span>
             </div>
           </div>
 
-          {/* Guest Login */}
           <button
             onClick={handleGuestLogin}
-            className="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 rounded-lg transition-colors mb-4"
+            className="w-full py-3 rounded-xl text-sm font-semibold transition-all hover:bg-white/10"
+            style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
           >
             👤 Continue as Guest
           </button>
 
-          {/* Register Link */}
-          <p className="text-center text-gray-400 text-sm">
-            Don't have an account?{' '}
-            <Link to="/register" className="text-red-500 hover:text-red-400 font-semibold">
-              Create Account
+          <p className="text-center text-sm mt-6" style={{ color: 'var(--text-secondary)' }}>
+            No account?{' '}
+            <Link to="/register" className="font-semibold hover:text-red-400 transition-colors" style={{ color: 'var(--red)' }}>
+              Create one
             </Link>
           </p>
         </div>
