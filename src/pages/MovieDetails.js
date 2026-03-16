@@ -11,6 +11,7 @@ const MovieDetails = () => {
 
   const contentType = location.pathname.includes('/tv/') ? 'tv' : 'movie';
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchDetails(); window.scrollTo(0, 0); }, [id]);
 
   const fetchDetails = async () => {
@@ -122,6 +123,7 @@ const MovieDetails = () => {
             <iframe
               src={`https://www.youtube.com/embed/${trailer.key}?autoplay=1`}
               className="w-full h-full rounded-2xl"
+              title="Movie Trailer"
               allowFullScreen allow="autoplay"
             />
           </div>

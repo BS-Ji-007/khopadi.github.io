@@ -25,6 +25,7 @@ const MoviePlayer = () => {
       } catch (e) { console.error(e); }
       finally { setLoading(false); }
     })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, type]);
 
   if (loading) return (

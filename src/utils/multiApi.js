@@ -1,3 +1,4 @@
+/* eslint-disable */
 import axios from 'axios';
 import { hianime } from './hianimeApi';
 import { shashankAnime } from './shashankAnimeApi';
@@ -373,7 +374,7 @@ export const smartSearch = async (query) => {
 // EXPORT ALL
 // ======================
 
-export default {
+const allApis = {
   tmdb,
   tvmaze,
   omdb,
@@ -385,3 +386,4 @@ export default {
   smartSearch,
   getImageUrl
 };
+export default allApis;

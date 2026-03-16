@@ -15,6 +15,7 @@ const Anime = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [category, setCategory] = useState('top-airing');
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadAnimes(); }, [page, category]);
 
   const loadAnimes = async () => {
