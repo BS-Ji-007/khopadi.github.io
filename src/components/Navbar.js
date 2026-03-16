@@ -162,7 +162,6 @@ const Navbar = () => {
                 placeholder="Search movies, shows, anime..."
                 value={searchQuery}
                 onChange={handleInputChange}
-                onFocus={() => { if (searchQuery.length >= 2) setShowResults(true); }}
                 className="w-full pl-9 pr-4 py-2 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none transition-all"
                 style={{
                   background: 'rgba(22,27,38,0.85)',
