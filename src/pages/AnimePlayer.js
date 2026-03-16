@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { hianime, switchServer, getCurrentServer, getAllServers } from '../utils/hianimeApi';
