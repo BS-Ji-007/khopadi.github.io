@@ -8,15 +8,26 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#cf2525ff',
+        primary: '#e8102a',
+        'primary-dark': '#b30d20',
         dark: {
-          900: '#0f172a',
-          800: '#1e293b',
-          700: '#334155',
+          950: '#060810',
+          900: '#0e1117',
+          800: '#161b26',
+          700: '#1e2535',
+          600: '#2a3347',
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Bebas Neue', 'sans-serif'],
+        sans: ['Outfit', 'system-ui', 'sans-serif'],
+      },
+      animation: {
+        'fade-up': 'fadeInUp 0.5s ease forwards',
+        'shimmer': 'shimmer 1.6s infinite linear',
+      },
+      backgroundImage: {
+        'hero-gradient': 'linear-gradient(105deg, #060810 0%, rgba(6,8,16,0.88) 40%, rgba(6,8,16,0.3) 75%, transparent 100%)',
       },
     },
   },

@@ -8,9 +8,7 @@ const TVShows = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    loadShows();
-  }, [page]);
+  useEffect(() => { loadShows(); }, [page]);
 
   const loadShows = async () => {
     setLoading(true);
@@ -22,58 +20,48 @@ const TVShows = () => {
   };
 
   return (
-    <div className="min-h-screen pt-20 pb-10">
-      <div className="container mx-auto px-4">
-        {/* Header */}
+    <div className="min-h-screen pt-24 pb-10" style={{ background: 'var(--bg-deep)' }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="mb-8">
-          <h1 className="mb-2 text-4xl font-bold">📺 Popular TV Shows</h1>
-          <p className="text-gray-400">Binge-watch the best TV series</p>
+          <h1 className="font-display text-5xl text-white tracking-wide mb-2">TV SHOWS</h1>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Binge-watch the best TV series</p>
         </div>
 
-        {/* TV Shows Grid */}
         {loading ? (
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {[...Array(18)].map((_, i) => (
-              <div key={i} className="aspect-[2/3] animate-pulse rounded-lg bg-gray-800" />
-            ))}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {[...Array(18)].map((_, i) => <div key={i} className="aspect-[2/3] rounded-xl skeleton" />)}
           </div>
         ) : shows.length > 0 ? (
           <>
-            <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {shows.map((show) => (
-                <MovieCard key={show.id} movie={show} type="tv" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {shows.map((show, i) => (
+                <div key={show.id} className="animate-fade-up" style={{ animationDelay: `${Math.min(i * 25, 300)}ms` }}>
+                  <MovieCard movie={show} type="tv" />
+                </div>
               ))}
             </div>
-
-            {/* Pagination */}
-            <div className="mt-10 flex items-center justify-center gap-4">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="rounded-lg bg-gray-800 px-6 py-2 font-semibold text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
-              >
-                ← Previous
+            <div className="mt-12 flex items-center justify-center gap-4">
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-40 hover:bg-white/10"
+                style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>
+                ← Prev
               </button>
-              <span className="text-lg">
-                Page {page} of {Math.min(totalPages, 500)}
+              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                Page <span className="text-white font-semibold">{page}</span> of {Math.min(totalPages, 500)}
               </span>
-              <button
-                onClick={() => setPage(p => Math.min(500, p + 1))}
-                disabled={page >= totalPages || page >= 500}
-                className="rounded-lg bg-red-600 px-6 py-2 font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
-              >
+              <button onClick={() => setPage(p => Math.min(500, p + 1))} disabled={page >= totalPages || page >= 500}
+                className="btn-primary text-sm disabled:opacity-40">
                 Next →
               </button>
             </div>
           </>
         ) : (
           <div className="py-20 text-center">
-            <p className="text-xl text-gray-400">🚨 No TV shows found</p>
+            <p className="text-xl" style={{ color: 'var(--text-secondary)' }}>No TV shows found</p>
           </div>
         )}
       </div>
     </div>
   );
 };
-
 export default TVShows;
