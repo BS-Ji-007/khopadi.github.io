@@ -15,6 +15,8 @@ const MovieCard = ({ movie, type = 'movie' }) => {
   const rating = movie.vote_average ? movie.vote_average.toFixed(1) : null;
   const poster = movie.poster_path || movie.poster || movie.Poster;
 
+  //todo test
+
   const imageUrl =
     poster && poster !== 'N/A'
       ? poster.startsWith('http') ? poster : getImageUrl(poster, 'w342')
