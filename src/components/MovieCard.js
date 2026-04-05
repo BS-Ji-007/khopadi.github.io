@@ -16,12 +16,12 @@ const MovieCard = ({ movie, type = 'movie' }) => {
   const poster = movie.poster_path || movie.poster || movie.Poster;
 
   //todo test 22
-
   const imageUrl =
     poster && poster !== 'N/A'
       ? poster.startsWith('http') ? poster : getImageUrl(poster, 'w342')
       : '/placeholder-movie.jpg';
 
+  //todo test 2222
   const effectiveType =
     movie.media_type === 'anime' || type === 'anime' ? 'anime'
     : type === 'tv' || movie.media_type === 'tv' ? 'tv'

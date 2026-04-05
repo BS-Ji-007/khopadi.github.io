@@ -8,7 +8,6 @@ const CATEGORIES = [
   { value: 'recent', label: 'Recent Episodes', icon: '🆕' },
 ];
 
-//todo after remove sync test
 const Anime = () => {
   const [animes, setAnimes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +18,6 @@ const Anime = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadAnimes(); }, [page, category]);
 
-  //todo test 2.o
   const loadAnimes = async () => {
     setLoading(true);
     let data;
@@ -32,7 +30,6 @@ const Anime = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  //todo 555555
   return (
     <div className="min-h-screen pt-24 pb-10" style={{ background: 'var(--bg-deep)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
