@@ -51,6 +51,7 @@ body {
   animation: shimmer 1.6s infinite linear;
 }
 
+//todo change and improve test
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
