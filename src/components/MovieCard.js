@@ -98,3 +98,5 @@ const MovieCard = ({ movie, type = 'movie' }) => {
 };
 
 export default MovieCard;
+
+//todo i khow k
